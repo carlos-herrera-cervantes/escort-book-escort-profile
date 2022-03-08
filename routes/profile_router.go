@@ -17,8 +17,8 @@ func BoostrapProfileRoutes(v *echo.Group) {
 		Emitter: &services.EmitterService{},
 	}
 
-	v.GET("/escort/profile/:id", router.GetOne)
+	v.GET("/escort/profile", router.GetOne)
 	v.POST("/escort/profile", router.Create)
-	v.PUT("/escort/profile/:id", router.UpdateOne)
-	v.DELETE("/escort/profile/:id", router.DeleteOne)
+	v.PATCH("/escort/profile", router.UpdateOne)
+	v.DELETE("/escort/profile", router.DeleteOne)
 }

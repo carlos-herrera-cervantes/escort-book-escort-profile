@@ -12,7 +12,7 @@ type ProfileStatusRepository struct {
 }
 
 func (r *ProfileStatusRepository) GetOne(ctx context.Context, id string) (models.ProfileStatus, error) {
-	query := "SELECT * FROM profilestatus WHERE profileid = $1;"
+	query := "SELECT * FROM profile_status WHERE escort_id = $1;"
 	row := r.Data.DB.QueryRowContext(ctx, query, id)
 
 	var profileStatus models.ProfileStatus
@@ -31,7 +31,7 @@ func (r *ProfileStatusRepository) GetOne(ctx context.Context, id string) (models
 }
 
 func (r *ProfileStatusRepository) Create(ctx context.Context, profileStatus *models.ProfileStatus) error {
-	query := "INSERT INTO profilestatus VALUES ($1, $2, $3, $4, $5)"
+	query := "INSERT INTO profile_status VALUES ($1, $2, $3, $4, $5)"
 	profileStatus.SetDefaultValues()
 
 	_, err := r.Data.DB.ExecContext(
@@ -51,7 +51,7 @@ func (r *ProfileStatusRepository) Create(ctx context.Context, profileStatus *mod
 }
 
 func (r *ProfileStatusRepository) UpdateOne(ctx context.Context, id string, profileStatus *models.ProfileStatus) error {
-	query := "UPDATE profilestatus SET profilestatuscategoryid = $1, updatedat = $2 WHERE profileid = $3;"
+	query := "UPDATE profile_status SET profile_status_category_id = $1, updated_at = $2 WHERE escort_id = $3;"
 
 	_, err := r.Data.DB.ExecContext(
 		ctx,

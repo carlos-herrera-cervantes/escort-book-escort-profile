@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"encoding/json"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
+	"escort-book-escort-profile/types"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -13,8 +15,10 @@ type BiographyController struct {
 }
 
 func (h *BiographyController) GetOne(c echo.Context) error {
-	id := c.Param("profileId")
-	biography, err := h.Repository.GetOne(c.Request().Context(), id)
+	var payload types.Payload
+
+	json.NewDecoder(c.Request().Body).Decode(&payload)
+	biography, err := h.Repository.GetOne(c.Request().Context(), payload.User.Id)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -24,14 +28,16 @@ func (h *BiographyController) GetOne(c echo.Context) error {
 }
 
 func (h *BiographyController) Create(c echo.Context) (err error) {
-	var biography models.Biography
+	var biographyWrapper models.BiographyWrapper
 
-	if err = c.Bind(&biography); err != nil {
+	if err = c.Bind(&biographyWrapper); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	profileId := c.Param("profileId")
-	biography.ProfileId = profileId
+	biography := models.Biography{
+		ProfileId:   biographyWrapper.User.Id,
+		Description: biographyWrapper.Description,
+	}
 
 	if err = biography.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -45,38 +51,42 @@ func (h *BiographyController) Create(c echo.Context) (err error) {
 }
 
 func (h *BiographyController) UpdateOne(c echo.Context) (err error) {
-	var biography models.Biography
-	id := c.Param("profileId")
+	var biographyWrapper models.BiographyWrapper
 
-	if err = c.Bind(&biography); err != nil {
+	if err = c.Bind(&biographyWrapper); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	biography := models.Biography{
+		ProfileId:   biographyWrapper.User.Id,
+		Description: biographyWrapper.Description,
 	}
 
 	if err = biography.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if _, err = h.Repository.GetOne(c.Request().Context(), id); err != nil {
+	if _, err = h.Repository.GetOne(c.Request().Context(), biographyWrapper.User.Id); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.UpdateOne(c.Request().Context(), id, &biography); err != nil {
+	if err = h.Repository.UpdateOne(c.Request().Context(), biographyWrapper.User.Id, &biography); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-
-	biography.Id = id
 
 	return c.JSON(http.StatusOK, biography)
 }
 
 func (h *BiographyController) DeleteOne(c echo.Context) (err error) {
-	id := c.Param("profileId")
+	var payload types.Payload
 
-	if _, err = h.Repository.GetOne(c.Request().Context(), id); err != nil {
+	json.NewDecoder(c.Request().Body).Decode(&payload)
+
+	if _, err = h.Repository.GetOne(c.Request().Context(), payload.User.Id); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.DeleteOne(c.Request().Context(), id); err != nil {
+	if err = h.Repository.DeleteOne(c.Request().Context(), payload.User.Id); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

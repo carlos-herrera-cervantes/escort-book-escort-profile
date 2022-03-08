@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/types"
@@ -15,15 +16,17 @@ type PriceController struct {
 
 func (h *PriceController) GetAll(c echo.Context) (err error) {
 	var pager types.Pager
+	var payload types.Payload
 
+	json.NewDecoder(c.Request().Body).Decode(&payload)
 	c.Bind(&pager)
 
 	if err = pager.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	prices, err := h.Repository.GetAll(c.Request().Context(), pager.Offset, pager.Limit)
-	number, _ := h.Repository.Count(c.Request().Context())
+	prices, err := h.Repository.GetAll(c.Request().Context(), payload.User.Id, pager.Offset, pager.Limit)
+	number, _ := h.Repository.Count(c.Request().Context(), payload.User.Id)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -35,8 +38,10 @@ func (h *PriceController) GetAll(c echo.Context) (err error) {
 }
 
 func (h *PriceController) GetOne(c echo.Context) error {
-	id := c.Param("id")
-	price, err := h.Repository.GetOne(c.Request().Context(), id)
+	var payload types.Payload
+
+	json.NewDecoder(c.Request().Body).Decode(&payload)
+	price, err := h.Repository.GetOne(c.Request().Context(), payload.User.Id)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -46,14 +51,15 @@ func (h *PriceController) GetOne(c echo.Context) error {
 }
 
 func (h *PriceController) Create(c echo.Context) (err error) {
-	var price models.Price
+	var priceWrapper models.PriceWrapper
 
-	if err = c.Bind(&price); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	c.Bind(&priceWrapper)
+	price := models.Price{
+		Cost:           priceWrapper.Cost,
+		ProfileId:      priceWrapper.User.Id,
+		TimeCategoryId: priceWrapper.TimeCategoryId,
+		Quantity:       priceWrapper.Quantity,
 	}
-
-	id := c.Param("profileId")
-	price.ProfileId = id
 
 	if err = price.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -67,38 +73,41 @@ func (h *PriceController) Create(c echo.Context) (err error) {
 }
 
 func (h *PriceController) UpdateOne(c echo.Context) (err error) {
-	var price models.Price
-	id := c.Param("id")
+	var priceWrapper models.PriceWrapper
 
-	if err = c.Bind(&price); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	c.Bind(&priceWrapper)
+	price := models.Price{
+		Cost:           priceWrapper.Cost,
+		ProfileId:      priceWrapper.User.Id,
+		TimeCategoryId: priceWrapper.TimeCategoryId,
+		Quantity:       priceWrapper.Quantity,
 	}
 
 	if err = price.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if _, err = h.Repository.GetOne(c.Request().Context(), id); err != nil {
+	if _, err = h.Repository.GetOne(c.Request().Context(), priceWrapper.User.Id); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.UpdateOne(c.Request().Context(), id, &price); err != nil {
+	if err = h.Repository.UpdateOne(c.Request().Context(), priceWrapper.User.Id, &price); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-
-	price.Id = id
 
 	return c.JSON(http.StatusOK, price)
 }
 
 func (h *PriceController) DeleteOne(c echo.Context) (err error) {
-	id := c.Param("id")
+	var payload types.Payload
 
-	if _, err = h.Repository.GetOne(c.Request().Context(), id); err != nil {
+	json.NewDecoder(c.Request().Body).Decode(&payload)
+
+	if _, err = h.Repository.GetOne(c.Request().Context(), payload.User.Id); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.DeleteOne(c.Request().Context(), id); err != nil {
+	if err = h.Repository.DeleteOne(c.Request().Context(), payload.User.Id); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

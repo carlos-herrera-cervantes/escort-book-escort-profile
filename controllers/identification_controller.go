@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/services"
@@ -19,14 +20,21 @@ type IdentificationController struct {
 
 func (h *IdentificationController) GetAll(c echo.Context) (err error) {
 	var pager types.Pager
+	var payload types.Payload
 
+	json.NewDecoder(c.Request().Body).Decode(&payload)
 	c.Bind(&pager)
 
 	if err = pager.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	identifications, err := h.Repository.GetAll(c.Request().Context(), pager.Offset, pager.Limit)
+	identifications, err := h.Repository.GetAll(
+		c.Request().Context(),
+		payload.User.Id,
+		pager.Offset,
+		pager.Limit,
+	)
 	number, _ := h.Repository.Count(c.Request().Context())
 
 	if err != nil {
@@ -39,13 +47,21 @@ func (h *IdentificationController) GetAll(c echo.Context) (err error) {
 }
 
 func (h *IdentificationController) Create(c echo.Context) (err error) {
+	var payload types.Payload
+
+	json.NewDecoder(c.Request().Body).Decode(&payload)
 	image, _ := c.FormFile("image")
 	src, _ := image.Open()
-	id := c.Param("profileId")
 
 	defer src.Close()
 
-	url, err := h.S3Service.Upload(c.Request().Context(), os.Getenv("S3"), image.Filename, id, src)
+	url, err := h.S3Service.Upload(
+		c.Request().Context(),
+		os.Getenv("S3"),
+		image.Filename,
+		payload.User.Id,
+		src,
+	)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -54,8 +70,8 @@ func (h *IdentificationController) Create(c echo.Context) (err error) {
 	var identification models.Identification
 	partId := c.FormValue("identificationPartId")
 
-	identification.Path = fmt.Sprintf("%s/%s", id, image.Filename)
-	identification.ProfileId = id
+	identification.Path = fmt.Sprintf("%s/%s", payload.User.Id, image.Filename)
+	identification.ProfileId = payload.User.Id
 	identification.IdentificationPartId = partId
 
 	if err = identification.Validate(); err != nil {
@@ -72,8 +88,10 @@ func (h *IdentificationController) Create(c echo.Context) (err error) {
 }
 
 func (h *IdentificationController) UpdateOne(c echo.Context) (err error) {
-	id := c.Param("id")
-	identification, err := h.Repository.GetOne(c.Request().Context(), id)
+	var payload types.Payload
+
+	json.NewDecoder(c.Request().Body).Decode(&payload)
+	identification, err := h.Repository.GetOne(c.Request().Context(), payload.User.Id)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -84,15 +102,21 @@ func (h *IdentificationController) UpdateOne(c echo.Context) (err error) {
 
 	defer src.Close()
 
-	url, err := h.S3Service.Upload(c.Request().Context(), os.Getenv("S3"), image.Filename, id, src)
+	url, err := h.S3Service.Upload(
+		c.Request().Context(),
+		os.Getenv("S3"),
+		image.Filename,
+		payload.User.Id,
+		src,
+	)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	identification.Path = fmt.Sprintf("%s/%s", id, image.Filename)
+	identification.Path = fmt.Sprintf("%s/%s", payload.User.Id, image.Filename)
 
-	if err = h.Repository.UpdateOne(c.Request().Context(), id, &identification); err != nil {
+	if err = h.Repository.UpdateOne(c.Request().Context(), payload.User.Id, &identification); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

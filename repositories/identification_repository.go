@@ -12,10 +12,10 @@ type IdentificationRepository struct {
 }
 
 func (r *IdentificationRepository) GetAll(
-	ctx context.Context, offset, limit int,
+	ctx context.Context, profileId string, offset, limit int,
 ) ([]models.Identification, error) {
-	query := "SELECT * FROM identifications OFFSET($1) LIMIT($2);"
-	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit)
+	query := "SELECT * FROM identification WHERE escort_id = $3 OFFSET($1) LIMIT($2);"
+	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit, profileId)
 
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (r *IdentificationRepository) GetAll(
 }
 
 func (r *IdentificationRepository) GetOne(ctx context.Context, id string) (models.Identification, error) {
-	query := "SELECT * FROM identifications WHERE id = $1;"
+	query := "SELECT * FROM identification WHERE id = $1;"
 	row := r.Data.DB.QueryRowContext(ctx, query, id)
 
 	var identification models.Identification
@@ -63,7 +63,7 @@ func (r *IdentificationRepository) GetOne(ctx context.Context, id string) (model
 }
 
 func (r *IdentificationRepository) Create(ctx context.Context, identification *models.Identification) error {
-	query := "INSERT INTO identifications VALUES ($1, $2, $3, $4, $5, $6);"
+	query := "INSERT INTO identification VALUES ($1, $2, $3, $4, $5, $6);"
 	identification.SetDefaultValues()
 
 	_, err := r.Data.DB.ExecContext(
@@ -86,7 +86,7 @@ func (r *IdentificationRepository) Create(ctx context.Context, identification *m
 func (r *IdentificationRepository) UpdateOne(
 	ctx context.Context, id string, identification *models.Identification,
 ) error {
-	query := "UPDATE identifications SET path = $1, updatedat = $2 WHERE id = $3;"
+	query := "UPDATE identification SET path = $1, updated_at = $2 WHERE id = $3;"
 	_, err := r.Data.DB.ExecContext(ctx, query, identification.Path, time.Now().UTC(), id)
 
 	if err != nil {
@@ -97,7 +97,7 @@ func (r *IdentificationRepository) UpdateOne(
 }
 
 func (r *IdentificationRepository) Count(ctx context.Context) (int, error) {
-	query := "SELECT COUNT(*) FROM identifications;"
+	query := "SELECT COUNT(*) FROM identification;"
 	row := r.Data.DB.QueryRowContext(ctx, query)
 
 	var number int

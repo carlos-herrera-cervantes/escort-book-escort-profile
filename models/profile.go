@@ -2,6 +2,7 @@ package models
 
 import (
 	"escort-book-escort-profile/enums"
+	"escort-book-escort-profile/types"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -20,6 +21,63 @@ type Profile struct {
 	Birthdate     string    `json:"birthdate"`
 	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`
+}
+
+type ProfileWrapper struct {
+	FirstName     string `json:"firstName"`
+	LastName      string `json:"lastName"`
+	Email         string `json:"email"`
+	Gender        string `json:"gender"`
+	NationalityId string `json:"nationalityId"`
+	Birthdate     string `json:"birthdate"`
+	User          types.DecodedJwt
+}
+
+type ProfilePartialWrapper struct {
+	FirstName     string `json:"firstName"`
+	LastName      string `json:"lastName"`
+	Gender        string `json:"gender"`
+	NationalityId string `json:"nationalityId"`
+	Birthdate     string `json:"birthdate"`
+	User          types.DecodedJwt
+}
+
+func (p *ProfileWrapper) Map() *Profile {
+	profile := Profile{
+		EscortId:      p.User.Id,
+		FirstName:     p.FirstName,
+		LastName:      p.LastName,
+		Email:         p.Email,
+		Gender:        p.Gender,
+		NationalityId: p.NationalityId,
+		Birthdate:     p.Birthdate,
+	}
+
+	return &profile
+}
+
+func (p *ProfilePartialWrapper) MapPartial(profile *Profile) *Profile {
+	if p.FirstName != "" {
+		profile.FirstName = p.FirstName
+	}
+
+	if p.LastName != "" {
+		profile.LastName = p.LastName
+	}
+
+	if p.Gender != "" {
+		profile.Gender = p.Gender
+	}
+
+	if p.NationalityId != "" {
+		profile.NationalityId = p.NationalityId
+	}
+
+	if p.Birthdate != "" {
+		profile.Birthdate = p.Birthdate
+	}
+
+	return profile
 }
 
 func (p *Profile) SetDefaultValues() *Profile {

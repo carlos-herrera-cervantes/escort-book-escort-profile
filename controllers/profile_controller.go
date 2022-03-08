@@ -1,9 +1,11 @@
 package controllers
 
 import (
+	"encoding/json"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/services"
+	"escort-book-escort-profile/types"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -15,8 +17,10 @@ type ProfileController struct {
 }
 
 func (h *ProfileController) GetOne(c echo.Context) error {
-	id := c.Param("id")
-	profile, err := h.Repository.GetOne(c.Request().Context(), id)
+	var payload types.Payload
+
+	json.NewDecoder(c.Request().Body).Decode(&payload)
+	profile, err := h.Repository.GetOne(c.Request().Context(), payload.User.Id)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -26,58 +30,53 @@ func (h *ProfileController) GetOne(c echo.Context) error {
 }
 
 func (h *ProfileController) Create(c echo.Context) (err error) {
-	var profile models.Profile
+	var profileWrapper models.ProfileWrapper
 
-	if err = c.Bind(&profile); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
+	c.Bind(&profileWrapper)
+	profile := profileWrapper.Map()
 
 	if err = profile.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if err = h.Repository.Create(c.Request().Context(), &profile); err != nil {
+	if err = h.Repository.Create(c.Request().Context(), profile); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	h.Emitter.Emit("create.profile.status", profile)
+	h.Emitter.Emit("create.profile.status", profileWrapper)
 
-	return c.JSON(http.StatusCreated, profile)
+	return c.JSON(http.StatusCreated, profileWrapper)
 }
 
 func (h *ProfileController) UpdateOne(c echo.Context) (err error) {
-	var profile models.Profile
-	id := c.Param("id")
+	var profileWrapper models.ProfilePartialWrapper
 
-	if err = c.Bind(&profile); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
+	json.NewDecoder(c.Request().Body).Decode(&profileWrapper)
+	finded, err := h.Repository.GetOne(c.Request().Context(), profileWrapper.User.Id)
 
-	if err = profile.Validate(); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	}
-
-	if _, err = h.Repository.GetOne(c.Request().Context(), id); err != nil {
+	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.UpdateOne(c.Request().Context(), id, &profile); err != nil {
+	profile := profileWrapper.MapPartial(&finded)
+
+	if err = h.Repository.UpdateOne(c.Request().Context(), profileWrapper.User.Id, profile); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-
-	profile.Id = id
 
 	return c.JSON(http.StatusOK, profile)
 }
 
 func (h *ProfileController) DeleteOne(c echo.Context) (err error) {
-	id := c.Param("id")
+	var payload types.Payload
 
-	if _, err = h.Repository.GetOne(c.Request().Context(), id); err != nil {
+	json.NewDecoder(c.Request().Body).Decode(&payload)
+
+	if _, err = h.Repository.GetOne(c.Request().Context(), payload.User.Id); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.DeleteOne(c.Request().Context(), id); err != nil {
+	if err = h.Repository.DeleteOne(c.Request().Context(), payload.User.Id); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

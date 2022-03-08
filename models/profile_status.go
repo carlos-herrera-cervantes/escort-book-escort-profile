@@ -1,6 +1,7 @@
 package models
 
 import (
+	"escort-book-escort-profile/types"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,6 +13,11 @@ type ProfileStatus struct {
 	ProfileStatusCategoryId string    `json:"profileStatusCategoryId" validate:"required"`
 	CreatedAt               time.Time `json:"createdAt"`
 	UpdatedAt               time.Time `json:"updatedAt"`
+}
+
+type ProfileStatusWrapper struct {
+	ProfileStatusCategoryId string `json:"profileStatusCategoryId"`
+	User                    types.DecodedJwt
 }
 
 func (p *ProfileStatus) SetDefaultValues() *ProfileStatus {

@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/types"
@@ -15,15 +16,22 @@ type AttentionSiteController struct {
 
 func (h *AttentionSiteController) GetAll(c echo.Context) (err error) {
 	var pager types.Pager
+	var payload types.Payload
 
+	json.NewDecoder(c.Request().Body).Decode(&payload)
 	c.Bind(&pager)
 
 	if err = pager.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	sites, err := h.Repository.GetAll(c.Request().Context(), pager.Offset, pager.Limit)
-	number, _ := h.Repository.Count(c.Request().Context())
+	sites, err := h.Repository.GetAll(
+		c.Request().Context(),
+		payload.User.Id,
+		pager.Offset,
+		pager.Limit,
+	)
+	number, _ := h.Repository.Count(c.Request().Context(), payload.User.Id)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -35,14 +43,13 @@ func (h *AttentionSiteController) GetAll(c echo.Context) (err error) {
 }
 
 func (h *AttentionSiteController) Create(c echo.Context) (err error) {
-	var site models.AttentionSite
+	var wrapper models.AttentionSiteWrapper
 
-	if err = c.Bind(&site); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	json.NewDecoder(c.Request().Body).Decode(&wrapper)
+	site := models.AttentionSite{
+		ProfileId:               wrapper.User.Id,
+		AttentionSiteCategoryId: wrapper.AttentionSiteCategoryId,
 	}
-
-	profileId := c.Param("profileId")
-	site.ProfileId = profileId
 
 	if err = site.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
