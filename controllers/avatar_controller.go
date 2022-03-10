@@ -1,9 +1,11 @@
 package controllers
 
 import (
+	"encoding/json"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/services"
+	"escort-book-escort-profile/types"
 	"fmt"
 	"net/http"
 	"os"
@@ -17,8 +19,10 @@ type AvatarController struct {
 }
 
 func (h *AvatarController) GetOne(c echo.Context) error {
-	id := c.Param("profileId")
-	avatar, err := h.Repository.GetOne(c.Request().Context(), id)
+	var payload types.Payload
+
+	json.NewDecoder(c.Request().Body).Decode(&payload)
+	avatar, err := h.Repository.GetOne(c.Request().Context(), payload.User.Id)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -28,13 +32,21 @@ func (h *AvatarController) GetOne(c echo.Context) error {
 }
 
 func (h *AvatarController) Create(c echo.Context) (err error) {
+	var payload types.Payload
+
 	image, _ := c.FormFile("image")
 	src, _ := image.Open()
-	id := c.Param("profileId")
+	json.NewDecoder(c.Request().Body).Decode(&payload)
 
 	defer src.Close()
 
-	url, err := h.S3Service.Upload(c.Request().Context(), os.Getenv("S3"), image.Filename, id, src)
+	url, err := h.S3Service.Upload(
+		c.Request().Context(),
+		os.Getenv("S3"),
+		image.Filename,
+		payload.User.Id,
+		src,
+	)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -42,8 +54,8 @@ func (h *AvatarController) Create(c echo.Context) (err error) {
 
 	var avatar models.Avatar
 
-	avatar.Path = fmt.Sprintf("%s/%s", id, image.Filename)
-	avatar.ProfileId = id
+	avatar.Path = fmt.Sprintf("%s/%s", payload.User.Id, image.Filename)
+	avatar.ProfileId = payload.User.Id
 
 	if err = avatar.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -59,8 +71,10 @@ func (h *AvatarController) Create(c echo.Context) (err error) {
 }
 
 func (h *AvatarController) UpdateOne(c echo.Context) (err error) {
-	id := c.Param("profileId")
-	avatar, err := h.Repository.GetOne(c.Request().Context(), id)
+	var payload types.Payload
+
+	json.NewDecoder(c.Request().Body).Decode(&payload)
+	avatar, err := h.Repository.GetOne(c.Request().Context(), payload.User.Id)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -71,15 +85,21 @@ func (h *AvatarController) UpdateOne(c echo.Context) (err error) {
 
 	defer src.Close()
 
-	url, err := h.S3Service.Upload(c.Request().Context(), os.Getenv("S3"), image.Filename, id, src)
+	url, err := h.S3Service.Upload(
+		c.Request().Context(),
+		os.Getenv("S3"),
+		image.Filename,
+		payload.User.Id,
+		src,
+	)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	avatar.Path = fmt.Sprintf("%s/%s", id, image.Filename)
+	avatar.Path = fmt.Sprintf("%s/%s", payload.User.Id, image.Filename)
 
-	if err = h.Repository.UpdateOne(c.Request().Context(), id, &avatar); err != nil {
+	if err = h.Repository.UpdateOne(c.Request().Context(), payload.User.Id, &avatar); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -89,13 +109,15 @@ func (h *AvatarController) UpdateOne(c echo.Context) (err error) {
 }
 
 func (h *AvatarController) DeleteOne(c echo.Context) (err error) {
-	id := c.Param("profileId")
+	var payload types.Payload
 
-	if _, err = h.Repository.GetOne(c.Request().Context(), id); err != nil {
+	json.NewDecoder(c.Request().Body).Decode(&payload)
+
+	if _, err = h.Repository.GetOne(c.Request().Context(), payload.User.Id); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.DeleteOne(c.Request().Context(), id); err != nil {
+	if err = h.Repository.DeleteOne(c.Request().Context(), payload.User.Id); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

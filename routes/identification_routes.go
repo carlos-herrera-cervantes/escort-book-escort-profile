@@ -17,7 +17,7 @@ func BoostrapIdentificationRoutes(v *echo.Group) {
 		S3Service: &services.S3Service{},
 	}
 
-	v.GET("/escort/profile/:profileId/identifications", router.GetAll)
-	v.POST("/escort/profile/:profileId/identifications", router.Create)
-	v.PATCH("/escort/profile/:profileId/identifications/:id", router.UpdateOne)
+	v.GET("/escort/profile/identifications", router.GetAll)
+	v.POST("/escort/profile/identifications", router.Create)
+	v.PATCH("/escort/profile/identifications/:id", router.UpdateOne)
 }

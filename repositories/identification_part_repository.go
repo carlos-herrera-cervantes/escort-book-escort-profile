@@ -13,7 +13,7 @@ type IdentificationPartRepository struct {
 func (r *IdentificationPartRepository) GetAll(
 	ctx context.Context, offset, limit int,
 ) ([]models.IdentificationPart, error) {
-	query := "SELECT * FROM identificationparts OFFSET($1) LIMIT($2);"
+	query := "SELECT * FROM identification_part OFFSET($1) LIMIT($2);"
 	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit)
 
 	if err != nil {
@@ -40,7 +40,7 @@ func (r *IdentificationPartRepository) GetAll(
 }
 
 func (r *IdentificationPartRepository) Count(ctx context.Context) (int, error) {
-	query := "SELECT COUNT(*) FROM identificationparts;"
+	query := "SELECT COUNT(*) FROM identification_part;"
 	row := r.Data.DB.QueryRowContext(ctx, query)
 
 	var number int

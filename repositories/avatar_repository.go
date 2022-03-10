@@ -12,7 +12,7 @@ type AvatarRepository struct {
 }
 
 func (r *AvatarRepository) GetOne(ctx context.Context, id string) (models.Avatar, error) {
-	query := "SELECT * FROM avatars WHERE profileid = $1;"
+	query := "SELECT * FROM avatar WHERE escort_id = $1;"
 	row := r.Data.DB.QueryRowContext(ctx, query, id)
 
 	var avatar models.Avatar
@@ -31,7 +31,7 @@ func (r *AvatarRepository) GetOne(ctx context.Context, id string) (models.Avatar
 }
 
 func (r *AvatarRepository) Create(ctx context.Context, avatar *models.Avatar) error {
-	query := "INSERT INTO avatars VALUES ($1, $2, $3, $4, $5);"
+	query := "INSERT INTO avatar VALUES ($1, $2, $3, $4, $5);"
 	avatar.SetDefaultValues()
 
 	_, err := r.Data.DB.ExecContext(
@@ -51,7 +51,7 @@ func (r *AvatarRepository) Create(ctx context.Context, avatar *models.Avatar) er
 }
 
 func (r *AvatarRepository) UpdateOne(ctx context.Context, id string, avatar *models.Avatar) error {
-	query := "UPDATE avatars SET path = $1, updatedat = $2 WHERE profileid = $3;"
+	query := "UPDATE avatar SET path = $1, updated_at = $2 WHERE escort_id = $3;"
 	_, err := r.Data.DB.ExecContext(ctx, query, avatar.Path, time.Now().UTC(), id)
 
 	if err != nil {
@@ -62,7 +62,7 @@ func (r *AvatarRepository) UpdateOne(ctx context.Context, id string, avatar *mod
 }
 
 func (r *AvatarRepository) DeleteOne(ctx context.Context, id string) error {
-	query := "DELETE FROM avatars WHERE profileid = $1;"
+	query := "DELETE FROM avatar WHERE escort_id = $1;"
 	_, err := r.Data.DB.ExecContext(ctx, query, id)
 
 	if err != nil {

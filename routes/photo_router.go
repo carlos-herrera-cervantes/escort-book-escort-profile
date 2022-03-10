@@ -17,7 +17,7 @@ func BoostrapPhotoRoutes(v *echo.Group) {
 		S3Service: &services.S3Service{},
 	}
 
-	v.GET("/escort/profile/:profileId/photos", router.GetAll)
-	v.POST("/escort/profile/:profileId/photos", router.Create)
-	v.DELETE("/escort/profile/:profileId/photos/:id", router.DeleteOne)
+	v.GET("/escort/profile/photos", router.GetAll)
+	v.POST("/escort/profile/photos", router.Create)
+	v.DELETE("/escort/profile/photos/:id", router.DeleteOne)
 }

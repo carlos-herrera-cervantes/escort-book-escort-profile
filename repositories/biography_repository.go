@@ -12,7 +12,7 @@ type BiographyRepository struct {
 }
 
 func (r *BiographyRepository) GetOne(ctx context.Context, id string) (models.Biography, error) {
-	query := "SELECT * FROM biography WHERE profileid = $1;"
+	query := "SELECT * FROM biography WHERE escort_id = $1;"
 	row := r.Data.DB.QueryRowContext(ctx, query, id)
 
 	var biography models.Biography
@@ -51,7 +51,7 @@ func (r *BiographyRepository) Create(ctx context.Context, biography *models.Biog
 }
 
 func (r *BiographyRepository) UpdateOne(ctx context.Context, id string, biography *models.Biography) error {
-	query := "UPDATE biography set description = $1, updatedat = $2 WHERE id = $3;"
+	query := "UPDATE biography set description = $1, updated_at = $2 WHERE escort_id = $3;"
 
 	_, err := r.Data.DB.ExecContext(
 		ctx,
@@ -68,7 +68,7 @@ func (r *BiographyRepository) UpdateOne(ctx context.Context, id string, biograph
 }
 
 func (r *BiographyRepository) DeleteOne(ctx context.Context, id string) error {
-	query := "DELETE FROM biography WHERE id = $1;"
+	query := "DELETE FROM biography WHERE escort_id = $1;"
 	_, err := r.Data.DB.ExecContext(ctx, query, id)
 
 	if err != nil {

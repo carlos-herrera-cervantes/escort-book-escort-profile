@@ -11,7 +11,7 @@ type AttentionSiteCategoryRepository struct {
 }
 
 func (r *AttentionSiteCategoryRepository) GetAll(ctx context.Context, offset, limit int) ([]models.AttentionSiteCategory, error) {
-	query := "SELECT * FROM attentionsitecategories OFFSET($1) LIMIT($2);"
+	query := "SELECT * FROM attention_site_category OFFSET($1) LIMIT($2);"
 	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit)
 
 	if err != nil {
@@ -39,7 +39,7 @@ func (r *AttentionSiteCategoryRepository) GetAll(ctx context.Context, offset, li
 }
 
 func (r *AttentionSiteCategoryRepository) Count(ctx context.Context) (int, error) {
-	query := "SELECT COUNT(*) FROM attentionsitecategories;"
+	query := "SELECT COUNT(*) FROM attention_site_category;"
 	rows := r.Data.DB.QueryRowContext(ctx, query)
 
 	var number int

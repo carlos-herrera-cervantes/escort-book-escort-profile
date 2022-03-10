@@ -11,7 +11,7 @@ type ProfileStatusCategoryRepository struct {
 }
 
 func (r *ProfileStatusCategoryRepository) GetAll(ctx context.Context, offset, limit int) ([]models.ProfileStatusCategory, error) {
-	query := "SELECT * FROM profilestatuscategories OFFSET($1) LIMIT($2);"
+	query := "SELECT * FROM profile_status_category OFFSET($1) LIMIT($2);"
 	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit)
 
 	if err != nil {
@@ -39,7 +39,7 @@ func (r *ProfileStatusCategoryRepository) GetAll(ctx context.Context, offset, li
 }
 
 func (r *ProfileStatusCategoryRepository) GetOneByName(ctx context.Context, name string) (models.ProfileStatusCategory, error) {
-	query := "SELECT * FROM profilestatuscategories WHERE name = $1"
+	query := "SELECT * FROM profile_status_category WHERE name = $1"
 	row := r.Data.DB.QueryRowContext(ctx, query, name)
 
 	var category models.ProfileStatusCategory
@@ -53,7 +53,7 @@ func (r *ProfileStatusCategoryRepository) GetOneByName(ctx context.Context, name
 }
 
 func (r *ProfileStatusCategoryRepository) Count(ctx context.Context) (int, error) {
-	query := "SELECT COUNT(*) FROM profilestatuscategories;"
+	query := "SELECT COUNT(*) FROM profile_status_category;"
 	row := r.Data.DB.QueryRowContext(ctx, query)
 
 	var number int

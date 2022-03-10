@@ -17,8 +17,8 @@ func BoostrapAvatarRoutes(v *echo.Group) {
 		S3Service: &services.S3Service{},
 	}
 
-	v.GET("/escort/profile/:profileId/avatar", router.GetOne)
-	v.POST("/escort/profile/:profileId/avatar", router.Create)
-	v.PATCH("/escort/profile/:profileId/avatar", router.UpdateOne)
-	v.DELETE("/escort/profile/:profileId/avatar", router.DeleteOne)
+	v.GET("/escort/profile/avatar", router.GetOne)
+	v.POST("/escort/profile/avatar", router.Create)
+	v.PATCH("/escort/profile/avatar", router.UpdateOne)
+	v.DELETE("/escort/profile/avatar", router.DeleteOne)
 }

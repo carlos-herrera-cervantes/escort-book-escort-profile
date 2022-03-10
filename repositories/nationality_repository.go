@@ -11,7 +11,7 @@ type NationalityRepository struct {
 }
 
 func (r *NationalityRepository) GetAll(ctx context.Context, offset, limit int) ([]models.Nationality, error) {
-	query := "SELECT * FROM nationalities OFFSET($1) LIMIT($2);"
+	query := "SELECT * FROM nationality OFFSET($1) LIMIT($2);"
 	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit)
 
 	if err != nil {
@@ -39,7 +39,7 @@ func (r *NationalityRepository) GetAll(ctx context.Context, offset, limit int) (
 }
 
 func (r *NationalityRepository) Count(ctx context.Context) (int, error) {
-	query := "SELECT COUNT(*) FROM nationalities;"
+	query := "SELECT COUNT(*) FROM nationality;"
 	row := r.Data.DB.QueryRowContext(ctx, query)
 
 	var number int

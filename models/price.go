@@ -1,6 +1,7 @@
 package models
 
 import (
+	"escort-book-escort-profile/types"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -13,8 +14,17 @@ type Price struct {
 	Cost           decimal.Decimal `json:"cost" validate:"required"`
 	ProfileId      string          `json:"profileId" validate:"required"`
 	TimeCategoryId string          `json:"timeCategoryId" validate:"required"`
+	Category       string          `json:"category"`
+	Quantity       int             `json:"quantity" validate:"required"`
 	CreatedAt      time.Time       `json:"createdAt"`
 	UpdatedAt      time.Time       `json:"updatedAt"`
+}
+
+type PriceWrapper struct {
+	Cost           decimal.Decimal `json:"cost"`
+	TimeCategoryId string          `json:"timeCategoryId"`
+	Quantity       int             `json:"quantity"`
+	User           types.DecodedJwt
 }
 
 func (p *Price) SetDefaultValues() *Price {

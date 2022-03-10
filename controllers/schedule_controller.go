@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/types"
@@ -15,15 +16,13 @@ type ScheduleController struct {
 
 func (h *ScheduleController) GetAll(c echo.Context) (err error) {
 	var pager types.Pager
+	var payload types.Payload
 
+	json.NewDecoder(c.Request().Body).Decode(&payload)
 	c.Bind(&pager)
 
-	if err = pager.Validate(); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	}
-
-	schedules, err := h.Repository.GetAll(c.Request().Context(), pager.Offset, pager.Limit)
-	number, _ := h.Repository.Count(c.Request().Context())
+	schedules, err := h.Repository.GetAll(c.Request().Context(), payload.User.Id, pager.Offset, pager.Limit)
+	number, _ := h.Repository.Count(c.Request().Context(), payload.User.Id)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -35,20 +34,16 @@ func (h *ScheduleController) GetAll(c echo.Context) (err error) {
 }
 
 func (h *ScheduleController) Create(c echo.Context) (err error) {
-	var schedule models.Schedule
+	var scheduleWrapper models.ScheduleWrapper
 
-	if err = c.Bind(&schedule); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	id := c.Param("profileId")
-	schedule.ProfileId = id
+	c.Bind(&scheduleWrapper)
+	schedule := scheduleWrapper.Map()
 
 	if err = schedule.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if err = h.Repository.Create(c.Request().Context(), &schedule); err != nil {
+	if err = h.Repository.Create(c.Request().Context(), schedule); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -56,13 +51,15 @@ func (h *ScheduleController) Create(c echo.Context) (err error) {
 }
 
 func (h *ScheduleController) DeleteOne(c echo.Context) (err error) {
-	id := c.Param("id")
+	var payload types.Payload
 
-	if _, err = h.Repository.GetOne(c.Request().Context(), id); err != nil {
+	json.NewDecoder(c.Request().Body).Decode(&payload)
+
+	if _, err = h.Repository.GetOne(c.Request().Context(), payload.User.Id); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.DeleteOne(c.Request().Context(), id); err != nil {
+	if err = h.Repository.DeleteOne(c.Request().Context(), payload.User.Id); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

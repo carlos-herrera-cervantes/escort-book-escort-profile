@@ -15,7 +15,7 @@ func BoostrapScheduleRoutes(v *echo.Group) {
 		},
 	}
 
-	v.GET("/escort/profile/:profileId/schedules", router.GetAll)
-	v.POST("/escort/profile/:profileId/schedules", router.Create)
-	v.DELETE("/escort/profile/:profileId/schedules/:id", router.DeleteOne)
+	v.GET("/escort/profile/schedules", router.GetAll)
+	v.POST("/escort/profile/schedules", router.Create)
+	v.DELETE("/escort/profile/schedules/:id", router.DeleteOne)
 }

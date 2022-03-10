@@ -11,7 +11,7 @@ type TimeCategoryRepository struct {
 }
 
 func (r *TimeCategoryRepository) GetAll(ctx context.Context, offset, limit int) ([]models.TimeCategory, error) {
-	query := "SELECT * FROM timecategories OFFSET($1) LIMIT($2);"
+	query := "SELECT * FROM time_category OFFSET($1) LIMIT($2);"
 	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit)
 
 	if err != nil {
@@ -39,7 +39,7 @@ func (r *TimeCategoryRepository) GetAll(ctx context.Context, offset, limit int) 
 }
 
 func (r *TimeCategoryRepository) Count(ctx context.Context) (int, error) {
-	query := "SELECT COUNT(*) FROM timecategories;"
+	query := "SELECT COUNT(*) FROM time_category;"
 	row := r.Data.DB.QueryRowContext(ctx, query)
 
 	var number int

@@ -11,9 +11,9 @@ type PhotoRepository struct {
 	Data *db.Data
 }
 
-func (r *PhotoRepository) GetAll(ctx context.Context, offset, limit int) ([]models.Photo, error) {
-	query := "SELECT * FROM photos OFFSET($1) LIMIT($2);"
-	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit)
+func (r *PhotoRepository) GetAll(ctx context.Context, profileId string, offset, limit int) ([]models.Photo, error) {
+	query := "SELECT * FROM photo WHERE escort_id = $3 OFFSET($1) LIMIT($2);"
+	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit, profileId)
 
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (r *PhotoRepository) GetAll(ctx context.Context, offset, limit int) ([]mode
 }
 
 func (r *PhotoRepository) GetOne(ctx context.Context, id string) (models.Photo, error) {
-	query := "SELECT * FROM photos WHERE id = $1;"
+	query := "SELECT * FROM photo WHERE id = $1;"
 	row := r.Data.DB.QueryRowContext(ctx, query, id)
 
 	var photo models.Photo
@@ -59,7 +59,7 @@ func (r *PhotoRepository) GetOne(ctx context.Context, id string) (models.Photo, 
 }
 
 func (r *PhotoRepository) Create(ctx context.Context, photo *models.Photo) error {
-	query := "INSERT INTO photos VALUES ($1, $2, $3, $4, $5);"
+	query := "INSERT INTO photo VALUES ($1, $2, $3, $4, $5);"
 	photo.SetDefaultValues()
 
 	_, err := r.Data.DB.ExecContext(
@@ -79,7 +79,7 @@ func (r *PhotoRepository) Create(ctx context.Context, photo *models.Photo) error
 }
 
 func (r *PhotoRepository) DeleteOne(ctx context.Context, id string) error {
-	query := "DELETE FROM photos WHERE id = $1;"
+	query := "DELETE FROM photo WHERE id = $1;"
 	_, err := r.Data.DB.ExecContext(ctx, query, id)
 
 	if err != nil {
@@ -89,9 +89,9 @@ func (r *PhotoRepository) DeleteOne(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *PhotoRepository) Count(ctx context.Context) (int, error) {
-	query := "SELECT COUNT(*) FROM photos;"
-	row := r.Data.DB.QueryRowContext(ctx, query)
+func (r *PhotoRepository) Count(ctx context.Context, profileId string) (int, error) {
+	query := "SELECT COUNT(*) FROM photo WHERE escort_id = $1;"
+	row := r.Data.DB.QueryRowContext(ctx, query, profileId)
 
 	var number int
 

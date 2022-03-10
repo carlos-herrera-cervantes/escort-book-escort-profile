@@ -11,7 +11,7 @@ type DayRepository struct {
 }
 
 func (r *DayRepository) GetAll(ctx context.Context, offset, limit int) ([]models.Day, error) {
-	query := "SELECT * FROM days OFFSET($1) LIMIT($2);"
+	query := "SELECT * FROM day OFFSET($1) LIMIT($2);"
 	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit)
 
 	if err != nil {
@@ -39,7 +39,7 @@ func (r *DayRepository) GetAll(ctx context.Context, offset, limit int) ([]models
 }
 
 func (r *DayRepository) GetOneByName(ctx context.Context, name string) (models.Day, error) {
-	query := "SELECT * FROM days WHERE id = $1;"
+	query := "SELECT * FROM day WHERE id = $1;"
 	row := r.Data.DB.QueryRowContext(ctx, query, name)
 
 	var day models.Day
@@ -58,7 +58,7 @@ func (r *DayRepository) GetOneByName(ctx context.Context, name string) (models.D
 }
 
 func (r *DayRepository) Count(ctx context.Context) (int, error) {
-	query := "SELECT COUNT(*) FROM days;"
+	query := "SELECT COUNT(*) FROM day;"
 	row := r.Data.DB.QueryRowContext(ctx, query)
 
 	var number int
