@@ -63,7 +63,9 @@ func (r *ProfileRepository) Create(ctx context.Context, profile *models.Profile)
 }
 
 func (r *ProfileRepository) UpdateOne(ctx context.Context, id string, profile *models.Profile) error {
-	query := "UPDATE profile set first_name=$1, last_name=$2, gender=$3, birthdate=$4, updated_at=$5 WHERE escort_id=$6;"
+	query := `UPDATE profile set
+			  first_name=$1, last_name=$2, gender=$3, birthdate=$4, updated_at=$5, nationality_id=$6
+			  WHERE escort_id=$7;`
 
 	_, err := r.Data.DB.ExecContext(
 		ctx,
@@ -73,6 +75,7 @@ func (r *ProfileRepository) UpdateOne(ctx context.Context, id string, profile *m
 		profile.Gender,
 		profile.Birthdate,
 		time.Now().UTC(),
+		profile.NationalityId,
 		id)
 
 	if err != nil {
