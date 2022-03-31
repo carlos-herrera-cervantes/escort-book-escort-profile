@@ -12,7 +12,7 @@ type PriceRepository struct {
 }
 
 func (r *PriceRepository) GetAll(ctx context.Context, profileId string, offset, limit int) ([]models.Price, error) {
-	query := `SELECT a.id, a.cost, a.escort_id, a.time_category_id, a.created_at, a.updated_at, a.quantity, b.name
+	query := `SELECT a.id, a.cost, a.escort_id, a.time_category_id, a.created_at, a.updated_at, a.quantity, b.name, b.measurement_unit
 		      FROM price a
 			  INNER JOIN time_category b
 			  ON b.id = a.time_category_id
@@ -39,6 +39,7 @@ func (r *PriceRepository) GetAll(ctx context.Context, profileId string, offset, 
 			&price.UpdatedAt,
 			&price.Quantity,
 			&price.Category,
+			&price.MeasurementUnit,
 		)
 
 		prices = append(prices, price)

@@ -10,14 +10,15 @@ import (
 )
 
 type Price struct {
-	Id             string          `json:"id"`
-	Cost           decimal.Decimal `json:"cost" validate:"required"`
-	ProfileId      string          `json:"profileId" validate:"required"`
-	TimeCategoryId string          `json:"timeCategoryId" validate:"required"`
-	Category       string          `json:"category"`
-	Quantity       int             `json:"quantity" validate:"required"`
-	CreatedAt      time.Time       `json:"createdAt"`
-	UpdatedAt      time.Time       `json:"updatedAt"`
+	Id              string          `json:"id"`
+	Cost            decimal.Decimal `json:"cost" validate:"required"`
+	ProfileId       string          `json:"profileId" validate:"required"`
+	TimeCategoryId  string          `json:"timeCategoryId" validate:"required"`
+	Category        string          `json:"category"`
+	Quantity        int             `json:"quantity" validate:"required"`
+	MeasurementUnit string          `json:"measurementUnit"`
+	CreatedAt       time.Time       `json:"createdAt"`
+	UpdatedAt       time.Time       `json:"updatedAt"`
 }
 
 type PriceWrapper struct {
