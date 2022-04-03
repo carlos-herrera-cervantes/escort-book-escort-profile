@@ -16,6 +16,7 @@ func BoostrapBiographyRoutes(v *echo.Group) {
 	}
 
 	v.GET("/escort/profile/biography", router.GetOne)
+	v.GET("/escort/profile/biography/:id", router.GetById)
 	v.POST("/escort/profile/biography", router.Create)
 	v.PUT("/escort/profile/biography", router.UpdateOne)
 	v.DELETE("/escort/profile/biography", router.DeleteOne)

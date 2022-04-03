@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"encoding/json"
+	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/types"
@@ -16,9 +16,28 @@ type AttentionSiteController struct {
 
 func (h *AttentionSiteController) GetAll(c echo.Context) (err error) {
 	var pager types.Pager
-	var payload types.Payload
+	c.Bind(&pager)
 
-	json.NewDecoder(c.Request().Body).Decode(&payload)
+	if err = pager.Validate(); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	userId := c.Request().Header.Get(enums.UserId)
+
+	sites, err := h.Repository.GetAll(c.Request().Context(), userId, pager.Offset, pager.Limit)
+	number, _ := h.Repository.Count(c.Request().Context(), userId)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	pagerResult := types.PagerResult{}
+
+	return c.JSON(http.StatusOK, pagerResult.GetPagerResult(&pager, number, sites))
+}
+
+func (h *AttentionSiteController) GetById(c echo.Context) (err error) {
+	var pager types.Pager
 	c.Bind(&pager)
 
 	if err = pager.Validate(); err != nil {
@@ -27,11 +46,11 @@ func (h *AttentionSiteController) GetAll(c echo.Context) (err error) {
 
 	sites, err := h.Repository.GetAll(
 		c.Request().Context(),
-		payload.User.Id,
+		c.Param("id"),
 		pager.Offset,
 		pager.Limit,
 	)
-	number, _ := h.Repository.Count(c.Request().Context(), payload.User.Id)
+	number, _ := h.Repository.Count(c.Request().Context(), c.Param("id"))
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -43,17 +62,14 @@ func (h *AttentionSiteController) GetAll(c echo.Context) (err error) {
 }
 
 func (h *AttentionSiteController) Create(c echo.Context) (err error) {
-	var wrapper models.AttentionSiteWrapper
-
-	json.NewDecoder(c.Request().Body).Decode(&wrapper)
-	site := models.AttentionSite{
-		ProfileId:               wrapper.User.Id,
-		AttentionSiteCategoryId: wrapper.AttentionSiteCategoryId,
-	}
+	var site models.AttentionSite
+	c.Bind(&site)
 
 	if err = site.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
+
+	site.ProfileId = c.Request().Header.Get(enums.UserId)
 
 	if err = h.Repository.Create(c.Request().Context(), &site); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())

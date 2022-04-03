@@ -1,7 +1,6 @@
 package models
 
 import (
-	"escort-book-escort-profile/types"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -21,11 +20,24 @@ type Price struct {
 	UpdatedAt       time.Time       `json:"updatedAt"`
 }
 
-type PriceWrapper struct {
+type PricePartial struct {
 	Cost           decimal.Decimal `json:"cost"`
 	TimeCategoryId string          `json:"timeCategoryId"`
 	Quantity       int             `json:"quantity"`
-	User           types.DecodedJwt
+}
+
+func (p *PricePartial) MapPartial(price *Price) {
+	if p.Cost != price.Cost {
+		price.Cost = p.Cost
+	}
+
+	if p.TimeCategoryId != "" {
+		price.TimeCategoryId = p.TimeCategoryId
+	}
+
+	if p.Quantity != 0 {
+		price.Quantity = p.Quantity
+	}
 }
 
 func (p *Price) SetDefaultValues() *Price {

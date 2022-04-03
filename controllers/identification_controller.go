@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"encoding/json"
+	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/services"
@@ -20,9 +20,6 @@ type IdentificationController struct {
 
 func (h *IdentificationController) GetAll(c echo.Context) (err error) {
 	var pager types.Pager
-	var payload types.Payload
-
-	json.NewDecoder(c.Request().Body).Decode(&payload)
 	c.Bind(&pager)
 
 	if err = pager.Validate(); err != nil {
@@ -31,7 +28,7 @@ func (h *IdentificationController) GetAll(c echo.Context) (err error) {
 
 	identifications, err := h.Repository.GetAll(
 		c.Request().Context(),
-		payload.User.Id,
+		c.Request().Header.Get(enums.UserId),
 		pager.Offset,
 		pager.Limit,
 	)
@@ -47,19 +44,17 @@ func (h *IdentificationController) GetAll(c echo.Context) (err error) {
 }
 
 func (h *IdentificationController) Create(c echo.Context) (err error) {
-	var payload types.Payload
-
-	json.NewDecoder(c.Request().Body).Decode(&payload)
 	image, _ := c.FormFile("image")
 	src, _ := image.Open()
 
 	defer src.Close()
+	userId := c.Request().Header.Get(enums.UserId)
 
 	url, err := h.S3Service.Upload(
 		c.Request().Context(),
 		os.Getenv("S3"),
 		image.Filename,
-		payload.User.Id,
+		userId,
 		src,
 	)
 
@@ -70,8 +65,8 @@ func (h *IdentificationController) Create(c echo.Context) (err error) {
 	var identification models.Identification
 	partId := c.FormValue("identificationPartId")
 
-	identification.Path = fmt.Sprintf("%s/%s", payload.User.Id, image.Filename)
-	identification.ProfileId = payload.User.Id
+	identification.Path = fmt.Sprintf("%s/%s", userId, image.Filename)
+	identification.ProfileId = userId
 	identification.IdentificationPartId = partId
 
 	if err = identification.Validate(); err != nil {
@@ -88,10 +83,8 @@ func (h *IdentificationController) Create(c echo.Context) (err error) {
 }
 
 func (h *IdentificationController) UpdateOne(c echo.Context) (err error) {
-	var payload types.Payload
-
-	json.NewDecoder(c.Request().Body).Decode(&payload)
-	identification, err := h.Repository.GetOne(c.Request().Context(), payload.User.Id)
+	userId := c.Request().Header.Get(enums.UserId)
+	identification, err := h.Repository.GetOne(c.Request().Context(), userId)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -106,7 +99,7 @@ func (h *IdentificationController) UpdateOne(c echo.Context) (err error) {
 		c.Request().Context(),
 		os.Getenv("S3"),
 		image.Filename,
-		payload.User.Id,
+		userId,
 		src,
 	)
 
@@ -114,9 +107,9 @@ func (h *IdentificationController) UpdateOne(c echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	identification.Path = fmt.Sprintf("%s/%s", payload.User.Id, image.Filename)
+	identification.Path = fmt.Sprintf("%s/%s", userId, image.Filename)
 
-	if err = h.Repository.UpdateOne(c.Request().Context(), payload.User.Id, &identification); err != nil {
+	if err = h.Repository.UpdateOne(c.Request().Context(), userId, &identification); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

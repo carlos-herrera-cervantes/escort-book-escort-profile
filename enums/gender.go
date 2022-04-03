@@ -2,6 +2,6 @@ package enums
 
 const (
 	Male         string = "Male"
-	Female              = "Female"
-	NotSpecified        = "NotSpecified"
+	Female       string = "Female"
+	NotSpecified string = "NotSpecified"
 )

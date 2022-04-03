@@ -16,6 +16,7 @@ func BoostrapAttentionSiteRoutes(v *echo.Group) {
 	}
 
 	v.GET("/escort/profile/attention-sites", router.GetAll)
+	v.GET("/escort/profile/attention-sites/:id", router.GetById)
 	v.POST("/escort/profile/attention-sites", router.Create)
 	v.DELETE("/escort/profile/attention-sites/:id", router.DeleteOne)
 }

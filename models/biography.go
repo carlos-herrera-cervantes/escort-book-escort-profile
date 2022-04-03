@@ -1,7 +1,6 @@
 package models
 
 import (
-	"escort-book-escort-profile/types"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -14,11 +13,6 @@ type Biography struct {
 	ProfileId   string    `json:"profileId" validate:"required"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
-}
-
-type BiographyWrapper struct {
-	Description string `json:"description"`
-	User        types.DecodedJwt
 }
 
 func (b *Biography) SetDefaultValues() *Biography {

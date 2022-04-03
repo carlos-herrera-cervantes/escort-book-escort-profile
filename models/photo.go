@@ -1,7 +1,6 @@
 package models
 
 import (
-	"escort-book-escort-profile/types"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -14,11 +13,6 @@ type Photo struct {
 	ProfileId string    `json:"profileId" validate:"required"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-type PhotoWrapper struct {
-	Path string `json:"path"`
-	User types.DecodedJwt
 }
 
 func (p *Photo) SetDefaultValues() *Photo {
