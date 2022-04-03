@@ -1,7 +1,6 @@
 package models
 
 import (
-	"escort-book-escort-profile/types"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -17,24 +16,6 @@ type Schedule struct {
 	DayName   string    `json:"day"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-type ScheduleWrapper struct {
-	From  string `json:"from" validate:"required"`
-	To    string `json:"to" validate:"required"`
-	DayId string `json:"dayId" validate:"required"`
-	User  types.DecodedJwt
-}
-
-func (s *ScheduleWrapper) Map() *Schedule {
-	schedule := Schedule{
-		From:      s.From,
-		To:        s.To,
-		DayId:     s.DayId,
-		ProfileId: s.User.Id,
-	}
-
-	return &schedule
 }
 
 func (s *Schedule) SetDefaultValues() *Schedule {

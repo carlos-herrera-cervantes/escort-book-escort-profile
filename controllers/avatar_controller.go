@@ -1,11 +1,10 @@
 package controllers
 
 import (
-	"encoding/json"
+	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/services"
-	"escort-book-escort-profile/types"
 	"fmt"
 	"net/http"
 	"os"
@@ -19,24 +18,33 @@ type AvatarController struct {
 }
 
 func (h *AvatarController) GetOne(c echo.Context) error {
-	var payload types.Payload
-
-	json.NewDecoder(c.Request().Body).Decode(&payload)
-	avatar, err := h.Repository.GetOne(c.Request().Context(), payload.User.Id)
+	avatar, err := h.Repository.GetOne(c.Request().Context(), c.Request().Header.Get(enums.UserId))
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
+	avatar.Path = fmt.Sprintf("%s/%s/%s", os.Getenv("S3_ENPOINT"), os.Getenv("S3"), avatar.Path)
+
+	return c.JSON(http.StatusOK, avatar)
+}
+
+func (h *AvatarController) GetById(c echo.Context) (err error) {
+	avatar, err := h.Repository.GetOne(c.Request().Context(), c.Param("id"))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	avatar.Path = fmt.Sprintf("%s/%s/%s", os.Getenv("S3_ENPOINT"), os.Getenv("S3"), avatar.Path)
+
 	return c.JSON(http.StatusOK, avatar)
 }
 
 func (h *AvatarController) Create(c echo.Context) (err error) {
-	var payload types.Payload
-
 	image, _ := c.FormFile("image")
 	src, _ := image.Open()
-	json.NewDecoder(c.Request().Body).Decode(&payload)
+	userId := c.Request().Header.Get(enums.UserId)
 
 	defer src.Close()
 
@@ -44,7 +52,7 @@ func (h *AvatarController) Create(c echo.Context) (err error) {
 		c.Request().Context(),
 		os.Getenv("S3"),
 		image.Filename,
-		payload.User.Id,
+		userId,
 		src,
 	)
 
@@ -54,8 +62,8 @@ func (h *AvatarController) Create(c echo.Context) (err error) {
 
 	var avatar models.Avatar
 
-	avatar.Path = fmt.Sprintf("%s/%s", payload.User.Id, image.Filename)
-	avatar.ProfileId = payload.User.Id
+	avatar.Path = fmt.Sprintf("%s/%s", userId, image.Filename)
+	avatar.ProfileId = userId
 
 	if err = avatar.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -71,10 +79,8 @@ func (h *AvatarController) Create(c echo.Context) (err error) {
 }
 
 func (h *AvatarController) UpdateOne(c echo.Context) (err error) {
-	var payload types.Payload
-
-	json.NewDecoder(c.Request().Body).Decode(&payload)
-	avatar, err := h.Repository.GetOne(c.Request().Context(), payload.User.Id)
+	userId := c.Request().Header.Get(enums.UserId)
+	avatar, err := h.Repository.GetOne(c.Request().Context(), userId)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -89,7 +95,7 @@ func (h *AvatarController) UpdateOne(c echo.Context) (err error) {
 		c.Request().Context(),
 		os.Getenv("S3"),
 		image.Filename,
-		payload.User.Id,
+		userId,
 		src,
 	)
 
@@ -97,9 +103,9 @@ func (h *AvatarController) UpdateOne(c echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	avatar.Path = fmt.Sprintf("%s/%s", payload.User.Id, image.Filename)
+	avatar.Path = fmt.Sprintf("%s/%s", userId, image.Filename)
 
-	if err = h.Repository.UpdateOne(c.Request().Context(), payload.User.Id, &avatar); err != nil {
+	if err = h.Repository.UpdateOne(c.Request().Context(), userId, &avatar); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -109,15 +115,13 @@ func (h *AvatarController) UpdateOne(c echo.Context) (err error) {
 }
 
 func (h *AvatarController) DeleteOne(c echo.Context) (err error) {
-	var payload types.Payload
+	userId := c.Request().Header.Get(enums.UserId)
 
-	json.NewDecoder(c.Request().Body).Decode(&payload)
-
-	if _, err = h.Repository.GetOne(c.Request().Context(), payload.User.Id); err != nil {
+	if _, err = h.Repository.GetOne(c.Request().Context(), userId); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.DeleteOne(c.Request().Context(), payload.User.Id); err != nil {
+	if err = h.Repository.DeleteOne(c.Request().Context(), userId); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

@@ -24,17 +24,6 @@ type AttentionSiteDetailed struct {
 	UpdatedAt               time.Time `json:"updatedAt"`
 }
 
-type AttentionSiteWrapper struct {
-	AttentionSiteCategoryId string `json:"attentionSiteCategoryId"`
-	User                    struct {
-		Email string   `json:"email"`
-		Roles []string `json:"roles"`
-		Id    string   `json:"id"`
-		Iat   int64    `json:"iat"`
-		Exp   int64    `json:"exp"`
-	}
-}
-
 func (s *AttentionSite) SetDefaultValues() *AttentionSite {
 	s.Id = uuid.NewString()
 	return s

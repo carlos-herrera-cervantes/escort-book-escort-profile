@@ -15,8 +15,8 @@ func BoostrapPriceRoutes(v *echo.Group) {
 		},
 	}
 
-	v.GET("/escort/profile/prices/:id", router.GetOne)
 	v.GET("/escort/profile/prices", router.GetAll)
+	v.GET("/escort/profile/prices/:id", router.GetById)
 	v.POST("/escort/profile/prices", router.Create)
 	v.PUT("/escort/profile/prices/:id", router.UpdateOne)
 	v.DELETE("/escort/profile/prices/:id", router.DeleteOne)

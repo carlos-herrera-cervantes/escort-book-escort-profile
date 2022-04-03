@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"encoding/json"
+	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/types"
@@ -16,17 +16,15 @@ type PriceController struct {
 
 func (h *PriceController) GetAll(c echo.Context) (err error) {
 	var pager types.Pager
-	var payload types.Payload
-
-	json.NewDecoder(c.Request().Body).Decode(&payload)
 	c.Bind(&pager)
 
 	if err = pager.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	prices, err := h.Repository.GetAll(c.Request().Context(), payload.User.Id, pager.Offset, pager.Limit)
-	number, _ := h.Repository.Count(c.Request().Context(), payload.User.Id)
+	userId := c.Request().Header.Get(enums.UserId)
+	prices, err := h.Repository.GetAll(c.Request().Context(), userId, pager.Offset, pager.Limit)
+	number, _ := h.Repository.Count(c.Request().Context(), userId)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -37,29 +35,31 @@ func (h *PriceController) GetAll(c echo.Context) (err error) {
 	return c.JSON(http.StatusOK, pagerResult.GetPagerResult(&pager, number, prices))
 }
 
-func (h *PriceController) GetOne(c echo.Context) error {
-	var payload types.Payload
+func (h *PriceController) GetById(c echo.Context) (err error) {
+	var pager types.Pager
+	c.Bind(&pager)
 
-	json.NewDecoder(c.Request().Body).Decode(&payload)
-	price, err := h.Repository.GetOne(c.Request().Context(), payload.User.Id)
-
-	if err != nil {
-		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	if err = pager.Validate(); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, price)
+	prices, err := h.Repository.GetAll(c.Request().Context(), c.Param("id"), pager.Offset, pager.Limit)
+	number, _ := h.Repository.Count(c.Request().Context(), c.Param("id"))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	pagerResult := types.PagerResult{}
+
+	return c.JSON(http.StatusOK, pagerResult.GetPagerResult(&pager, number, prices))
 }
 
 func (h *PriceController) Create(c echo.Context) (err error) {
-	var priceWrapper models.PriceWrapper
+	var price models.Price
+	c.Bind(&price)
 
-	c.Bind(&priceWrapper)
-	price := models.Price{
-		Cost:           priceWrapper.Cost,
-		ProfileId:      priceWrapper.User.Id,
-		TimeCategoryId: priceWrapper.TimeCategoryId,
-		Quantity:       priceWrapper.Quantity,
-	}
+	price.ProfileId = c.Request().Header.Get(enums.UserId)
 
 	if err = price.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -73,25 +73,19 @@ func (h *PriceController) Create(c echo.Context) (err error) {
 }
 
 func (h *PriceController) UpdateOne(c echo.Context) (err error) {
-	var priceWrapper models.PriceWrapper
+	var partialPrice models.PricePartial
+	c.Bind(&partialPrice)
 
-	c.Bind(&priceWrapper)
-	price := models.Price{
-		Cost:           priceWrapper.Cost,
-		ProfileId:      priceWrapper.User.Id,
-		TimeCategoryId: priceWrapper.TimeCategoryId,
-		Quantity:       priceWrapper.Quantity,
-	}
+	userId := c.Request().Header.Get(enums.UserId)
+	price, err := h.Repository.GetOne(c.Request().Context(), userId)
 
-	if err = price.Validate(); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	}
-
-	if _, err = h.Repository.GetOne(c.Request().Context(), priceWrapper.User.Id); err != nil {
+	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.UpdateOne(c.Request().Context(), priceWrapper.User.Id, &price); err != nil {
+	partialPrice.MapPartial(&price)
+
+	if err = h.Repository.UpdateOne(c.Request().Context(), userId, &price); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -99,15 +93,13 @@ func (h *PriceController) UpdateOne(c echo.Context) (err error) {
 }
 
 func (h *PriceController) DeleteOne(c echo.Context) (err error) {
-	var payload types.Payload
+	userId := c.Request().Header.Get(enums.UserId)
 
-	json.NewDecoder(c.Request().Body).Decode(&payload)
-
-	if _, err = h.Repository.GetOne(c.Request().Context(), payload.User.Id); err != nil {
+	if _, err = h.Repository.GetOne(c.Request().Context(), userId); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.DeleteOne(c.Request().Context(), payload.User.Id); err != nil {
+	if err = h.Repository.DeleteOne(c.Request().Context(), userId); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

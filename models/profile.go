@@ -2,7 +2,6 @@ package models
 
 import (
 	"escort-book-escort-profile/enums"
-	"escort-book-escort-profile/types"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -23,40 +22,15 @@ type Profile struct {
 	UpdatedAt     time.Time `json:"updatedAt"`
 }
 
-type ProfileWrapper struct {
-	FirstName     string `json:"firstName"`
-	LastName      string `json:"lastName"`
-	Email         string `json:"email"`
-	Gender        string `json:"gender"`
-	NationalityId string `json:"nationalityId"`
-	Birthdate     string `json:"birthdate"`
-	User          types.DecodedJwt
-}
-
-type ProfilePartialWrapper struct {
+type PartialProfile struct {
 	FirstName     string `json:"firstName"`
 	LastName      string `json:"lastName"`
 	Gender        string `json:"gender"`
 	NationalityId string `json:"nationalityId"`
 	Birthdate     string `json:"birthdate"`
-	User          types.DecodedJwt
 }
 
-func (p *ProfileWrapper) Map() *Profile {
-	profile := Profile{
-		EscortId:      p.User.Id,
-		FirstName:     p.FirstName,
-		LastName:      p.LastName,
-		Email:         p.Email,
-		Gender:        p.Gender,
-		NationalityId: p.NationalityId,
-		Birthdate:     p.Birthdate,
-	}
-
-	return &profile
-}
-
-func (p *ProfilePartialWrapper) MapPartial(profile *Profile) *Profile {
+func (p *PartialProfile) MapPartial(profile *Profile) {
 	if p.FirstName != "" {
 		profile.FirstName = p.FirstName
 	}
@@ -76,8 +50,6 @@ func (p *ProfilePartialWrapper) MapPartial(profile *Profile) *Profile {
 	if p.Birthdate != "" {
 		profile.Birthdate = p.Birthdate
 	}
-
-	return profile
 }
 
 func (p *Profile) SetDefaultValues() *Profile {

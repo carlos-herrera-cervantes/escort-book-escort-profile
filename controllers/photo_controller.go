@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"encoding/json"
+	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/services"
@@ -20,20 +20,46 @@ type PhotoController struct {
 
 func (h *PhotoController) GetAll(c echo.Context) (err error) {
 	var pager types.Pager
-	var payload types.Payload
-
-	json.NewDecoder(c.Request().Body).Decode(&payload)
 	c.Bind(&pager)
 
 	if err = pager.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	photos, err := h.Repository.GetAll(c.Request().Context(), payload.User.Id, pager.Offset, pager.Limit)
-	number, _ := h.Repository.Count(c.Request().Context(), payload.User.Id)
+	userId := c.Request().Header.Get(enums.UserId)
+	photos, err := h.Repository.GetAll(c.Request().Context(), userId, pager.Offset, pager.Limit)
+	number, _ := h.Repository.Count(c.Request().Context(), userId)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	pagerResult := types.PagerResult{}
+
+	return c.JSON(http.StatusOK, pagerResult.GetPagerResult(&pager, number, photos))
+}
+
+func (h *PhotoController) GetById(c echo.Context) (err error) {
+	var pager types.Pager
+	c.Bind(&pager)
+
+	if err = pager.Validate(); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	photos, err := h.Repository.GetAll(c.Request().Context(), c.Param("id"), pager.Offset, pager.Limit)
+	number, _ := h.Repository.Count(c.Request().Context(), c.Param("id"))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	for index := range photos {
+		photos[index].Path = fmt.Sprintf(
+			"%s/%s/%s",
+			os.Getenv("S3_ENPOINT"),
+			os.Getenv("S3"), photos[index].Path,
+		)
 	}
 
 	pagerResult := types.PagerResult{}
@@ -46,15 +72,13 @@ func (h *PhotoController) Create(c echo.Context) (err error) {
 	src, _ := image.Open()
 
 	defer src.Close()
-
-	var photoWrapper models.PhotoWrapper
-	json.NewDecoder(c.Request().Body).Decode(&photoWrapper)
+	userId := c.Request().Header.Get(enums.UserId)
 
 	url, err := h.S3Service.Upload(
 		c.Request().Context(),
 		os.Getenv("S3"),
 		image.Filename,
-		photoWrapper.User.Id,
+		userId,
 		src,
 	)
 
@@ -63,8 +87,8 @@ func (h *PhotoController) Create(c echo.Context) (err error) {
 	}
 
 	photo := models.Photo{
-		Path:      fmt.Sprintf("%s/%s", photoWrapper.User.Id, image.Filename),
-		ProfileId: photoWrapper.User.Id,
+		Path:      fmt.Sprintf("%s/%s", userId, image.Filename),
+		ProfileId: userId,
 	}
 
 	if err = photo.Validate(); err != nil {

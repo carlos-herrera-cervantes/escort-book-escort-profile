@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"encoding/json"
+	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"net/http"
@@ -14,18 +14,19 @@ type ProfileStatusController struct {
 }
 
 func (h *ProfileStatusController) UpdateOne(c echo.Context) (err error) {
-	var profileStatusWrapper models.ProfileStatusWrapper
+	var partialProfileStatus models.PartialProfileStatus
+	c.Bind(&partialProfileStatus)
 
-	json.NewDecoder(c.Request().Body).Decode(&profileStatusWrapper)
-	profileStatus, err := h.Repository.GetOne(c.Request().Context(), profileStatusWrapper.User.Id)
+	userId := c.Request().Header.Get(enums.UserId)
+	profileStatus, err := h.Repository.GetOne(c.Request().Context(), userId)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	profileStatus.ProfileStatusCategoryId = profileStatusWrapper.ProfileStatusCategoryId
+	profileStatus.ProfileStatusCategoryId = partialProfileStatus.ProfileStatusCategoryId
 
-	if err = h.Repository.UpdateOne(c.Request().Context(), profileStatusWrapper.User.Id, &profileStatus); err != nil {
+	if err = h.Repository.UpdateOne(c.Request().Context(), userId, &profileStatus); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
