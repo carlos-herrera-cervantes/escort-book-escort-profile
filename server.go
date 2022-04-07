@@ -31,6 +31,8 @@ func main() {
 	routes.BoostrapProfileStatusCategoryRoutes(v1)
 	routes.BoostrapProfileStatusRoutes(v1)
 	routes.BoostrapProfileRoutes(v1)
+	routes.BoostrapServiceRoutes(v1)
+	routes.BoostrapServiceCategoryRoutes(v1)
 
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%v", os.Getenv("PORT"))))
 }
