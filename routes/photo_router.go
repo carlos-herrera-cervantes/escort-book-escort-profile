@@ -18,7 +18,7 @@ func BoostrapPhotoRoutes(v *echo.Group) {
 	}
 
 	v.GET("/escort/profile/photos", router.GetAll)
-	v.GET("/escort/profile/photos/:id", router.GetById)
+	v.GET("/escort/:id/profile/photos", router.GetById)
 	v.POST("/escort/profile/photos", router.Create)
 	v.DELETE("/escort/profile/photos/:id", router.DeleteOne)
 }

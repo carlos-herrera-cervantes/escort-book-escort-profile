@@ -18,7 +18,7 @@ func BoostrapAvatarRoutes(v *echo.Group) {
 	}
 
 	v.GET("/escort/profile/avatar", router.GetOne)
-	v.GET("/escort/profile/avatar/:id", router.GetById)
+	v.GET("/escort/:id/profile/avatar", router.GetById)
 	v.POST("/escort/profile/avatar", router.Create)
 	v.PATCH("/escort/profile/avatar", router.UpdateOne)
 	v.DELETE("/escort/profile/avatar", router.DeleteOne)
