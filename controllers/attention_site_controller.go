@@ -65,11 +65,11 @@ func (h *AttentionSiteController) Create(c echo.Context) (err error) {
 	var site models.AttentionSite
 	c.Bind(&site)
 
+	site.ProfileId = c.Request().Header.Get(enums.UserId)
+
 	if err = site.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
-
-	site.ProfileId = c.Request().Header.Get(enums.UserId)
 
 	if err = h.Repository.Create(c.Request().Context(), &site); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())

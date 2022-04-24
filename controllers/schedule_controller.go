@@ -51,6 +51,7 @@ func (h *ScheduleController) Create(c echo.Context) (err error) {
 	var schedule models.Schedule
 
 	c.Bind(&schedule)
+	schedule.ProfileId = c.Request().Header.Get(enums.UserId)
 
 	if err = schedule.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
