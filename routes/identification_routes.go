@@ -15,6 +15,9 @@ func BoostrapIdentificationRoutes(v *echo.Group) {
 			Data: db.New(),
 		},
 		S3Service: &services.S3Service{},
+		IdentificationCategoryRepository: &repositories.IdentificationPartRepository{
+			Data: db.New(),
+		},
 	}
 
 	v.GET("/escort/profile/identifications", router.GetAll)

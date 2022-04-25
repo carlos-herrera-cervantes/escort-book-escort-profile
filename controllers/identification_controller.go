@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"escort-book-escort-profile/constants"
 	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
@@ -14,8 +15,9 @@ import (
 )
 
 type IdentificationController struct {
-	Repository *repositories.IdentificationRepository
-	S3Service  *services.S3Service
+	Repository                       repositories.IIdentificationRepository
+	S3Service                        services.IS3Service
+	IdentificationCategoryRepository repositories.IIdentificationPartRepository
 }
 
 func (h *IdentificationController) GetAll(c echo.Context) (err error) {
@@ -45,6 +47,17 @@ func (h *IdentificationController) GetAll(c echo.Context) (err error) {
 
 func (h *IdentificationController) Create(c echo.Context) (err error) {
 	image, _ := c.FormFile("image")
+
+	if image.Size > constants.MaxImageSize {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+
+	partId := c.FormValue("identificationPartId")
+
+	if _, err := h.IdentificationCategoryRepository.GetById(c.Request().Context(), partId); err != nil {
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
+
 	src, _ := image.Open()
 
 	defer src.Close()
@@ -62,12 +75,11 @@ func (h *IdentificationController) Create(c echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	var identification models.Identification
-	partId := c.FormValue("identificationPartId")
-
-	identification.Path = fmt.Sprintf("%s/%s", userId, image.Filename)
-	identification.ProfileId = userId
-	identification.IdentificationPartId = partId
+	identification := models.Identification{
+		Path:                 fmt.Sprintf("%s/%s", userId, image.Filename),
+		ProfileId:            userId,
+		IdentificationPartId: partId,
+	}
 
 	if err = identification.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -83,6 +95,12 @@ func (h *IdentificationController) Create(c echo.Context) (err error) {
 }
 
 func (h *IdentificationController) UpdateOne(c echo.Context) (err error) {
+	id := c.Param("id")
+
+	if _, err := h.IdentificationCategoryRepository.GetById(c.Request().Context(), id); err != nil {
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
+
 	userId := c.Request().Header.Get(enums.UserId)
 	identification, err := h.Repository.GetOne(c.Request().Context(), userId)
 
@@ -91,6 +109,11 @@ func (h *IdentificationController) UpdateOne(c echo.Context) (err error) {
 	}
 
 	image, _ := c.FormFile("image")
+
+	if image.Size > constants.MaxImageSize {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+
 	src, _ := image.Open()
 
 	defer src.Close()

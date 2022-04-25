@@ -38,6 +38,20 @@ func (r *AttentionSiteCategoryRepository) GetAll(ctx context.Context, offset, li
 	return categories, nil
 }
 
+func (r *AttentionSiteCategoryRepository) GetById(ctx context.Context, id string) (models.AttentionSiteCategory, error) {
+	query := "SELECT id, name FROM attention_site_category WHERE id = $1;"
+	row := r.Data.DB.QueryRowContext(ctx, query, id)
+
+	var category models.AttentionSiteCategory
+	err := row.Scan(&category.Id, &category.Name)
+
+	if err != nil {
+		return models.AttentionSiteCategory{}, err
+	}
+
+	return category, nil
+}
+
 func (r *AttentionSiteCategoryRepository) Count(ctx context.Context) (int, error) {
 	query := "SELECT COUNT(*) FROM attention_site_category;"
 	rows := r.Data.DB.QueryRowContext(ctx, query)

@@ -15,6 +15,9 @@ func BoostrapProfileRoutes(v *echo.Group) {
 			Data: db.New(),
 		},
 		Emitter: &services.EmitterService{},
+		NationalityRepository: &repositories.NationalityRepository{
+			Data: db.New(),
+		},
 	}
 
 	v.GET("/escort/profile", router.GetOne)

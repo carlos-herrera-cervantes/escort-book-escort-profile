@@ -13,6 +13,9 @@ func BoostrapProfileStatusRoutes(v *echo.Group) {
 		Repository: &repositories.ProfileStatusRepository{
 			Data: db.New(),
 		},
+		ProfileStatusCategoryRepository: &repositories.ProfileStatusCategoryRepository{
+			Data: db.New(),
+		},
 	}
 
 	v.PATCH("/escort/profile/status", router.UpdateOne)

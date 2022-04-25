@@ -13,6 +13,9 @@ func BoostrapAttentionSiteRoutes(v *echo.Group) {
 		Repository: &repositories.AttentionSiteRepository{
 			Data: db.New(),
 		},
+		AttentionSiteCategoryRepository: &repositories.AttentionSiteCategoryRepository{
+			Data: db.New(),
+		},
 	}
 
 	v.GET("/escort/profile/attention-sites", router.GetAll)

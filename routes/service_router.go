@@ -13,6 +13,9 @@ func BoostrapServiceRoutes(v *echo.Group) {
 		Repository: &repositories.ServiceRepository{
 			Data: db.New(),
 		},
+		ServiceCategoryRepository: &repositories.ServiceCategoryRepository{
+			Data: db.New(),
+		},
 	}
 
 	v.GET("/escort/profile/service", router.GetAll)

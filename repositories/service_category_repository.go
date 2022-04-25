@@ -31,6 +31,20 @@ func (r *ServiceCategoryRepository) GetAll(ctx context.Context, offset, limit in
 	return categories, nil
 }
 
+func (r *ServiceCategoryRepository) GetById(ctx context.Context, id string) (models.ServiceCategory, error) {
+	query := "SELECT id, name FROM service_category WHERE id = $1;"
+	row := r.Data.DB.QueryRowContext(ctx, query, id)
+
+	var category models.ServiceCategory
+	err := row.Scan(&category.Id, &category.Name)
+
+	if err != nil {
+		return models.ServiceCategory{}, err
+	}
+
+	return category, nil
+}
+
 func (r *ServiceCategoryRepository) Count(ctx context.Context) (int, error) {
 	query := "SELECT COUNT(*) FROM service_category;"
 	row := r.Data.DB.QueryRowContext(ctx, query)

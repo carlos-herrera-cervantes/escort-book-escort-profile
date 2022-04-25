@@ -57,6 +57,20 @@ func (r *DayRepository) GetOneByName(ctx context.Context, name string) (models.D
 	return day, nil
 }
 
+func (r *DayRepository) GetById(ctx context.Context, id string) (models.Day, error) {
+	query := "SELECT id, name FROM day WHERE id = $1;"
+	row := r.Data.DB.QueryRowContext(ctx, query, id)
+
+	var day models.Day
+	err := row.Scan(&day.Id, &day.Name)
+
+	if err != nil {
+		return models.Day{}, err
+	}
+
+	return day, nil
+}
+
 func (r *DayRepository) Count(ctx context.Context) (int, error) {
 	query := "SELECT COUNT(*) FROM day;"
 	row := r.Data.DB.QueryRowContext(ctx, query)

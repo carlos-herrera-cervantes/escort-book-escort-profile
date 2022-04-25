@@ -13,6 +13,9 @@ func BoostrapScheduleRoutes(v *echo.Group) {
 		Repository: &repositories.ScheduleRepository{
 			Data: db.New(),
 		},
+		DayRepository: &repositories.DayRepository{
+			Data: db.New(),
+		},
 	}
 
 	v.GET("/escort/profile/schedules", router.GetAll)

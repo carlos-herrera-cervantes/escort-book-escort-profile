@@ -11,7 +11,8 @@ import (
 )
 
 type PriceController struct {
-	Repository *repositories.PriceRepository
+	Repository             repositories.IPriceRepository
+	TimeCategoryRepository repositories.ITimeCategoryRepository
 }
 
 func (h *PriceController) GetAll(c echo.Context) (err error) {
@@ -59,6 +60,10 @@ func (h *PriceController) Create(c echo.Context) (err error) {
 	var price models.Price
 	c.Bind(&price)
 
+	if _, err := h.TimeCategoryRepository.GetById(c.Request().Context(), price.TimeCategoryId); err != nil {
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
+
 	price.ProfileId = c.Request().Header.Get(enums.UserId)
 
 	if err = price.Validate(); err != nil {
@@ -75,6 +80,10 @@ func (h *PriceController) Create(c echo.Context) (err error) {
 func (h *PriceController) UpdateOne(c echo.Context) (err error) {
 	var partialPrice models.PricePartial
 	c.Bind(&partialPrice)
+
+	if _, err := h.TimeCategoryRepository.GetById(c.Request().Context(), partialPrice.TimeCategoryId); err != nil {
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
 
 	userId := c.Request().Header.Get(enums.UserId)
 	price, err := h.Repository.GetOne(c.Request().Context(), userId)
