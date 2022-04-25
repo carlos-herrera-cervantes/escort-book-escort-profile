@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"escort-book-escort-profile/constants"
 	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
@@ -43,6 +44,11 @@ func (h *AvatarController) GetById(c echo.Context) (err error) {
 
 func (h *AvatarController) Create(c echo.Context) (err error) {
 	image, _ := c.FormFile("image")
+
+	if image.Size > constants.MaxImageSize {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+
 	src, _ := image.Open()
 	userId := c.Request().Header.Get(enums.UserId)
 
@@ -87,6 +93,11 @@ func (h *AvatarController) UpdateOne(c echo.Context) (err error) {
 	}
 
 	image, _ := c.FormFile("image")
+
+	if image.Size > constants.MaxImageSize {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+
 	src, _ := image.Open()
 
 	defer src.Close()

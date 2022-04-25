@@ -11,7 +11,8 @@ import (
 )
 
 type ServiceController struct {
-	Repository *repositories.ServiceRepository
+	Repository                repositories.IServiceRepository
+	ServiceCategoryRepository repositories.IServiceCategoryRepository
 }
 
 func (h *ServiceController) GetAll(c echo.Context) (err error) {
@@ -59,6 +60,10 @@ func (h *ServiceController) GetById(c echo.Context) (err error) {
 func (h *ServiceController) Create(c echo.Context) (err error) {
 	var service models.Service
 	c.Bind(&service)
+
+	if _, err := h.ServiceCategoryRepository.GetById(c.Request().Context(), service.ServiceCategoryId); err != nil {
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
 
 	service.ProfileId = c.Request().Header.Get(enums.UserId)
 

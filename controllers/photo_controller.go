@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"escort-book-escort-profile/constants"
 	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
@@ -69,6 +70,11 @@ func (h *PhotoController) GetById(c echo.Context) (err error) {
 
 func (h *PhotoController) Create(c echo.Context) (err error) {
 	image, _ := c.FormFile("image")
+
+	if image.Size > constants.MaxImageSize {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+
 	src, _ := image.Open()
 
 	defer src.Close()

@@ -11,8 +11,9 @@ import (
 )
 
 type ProfileController struct {
-	Repository *repositories.ProfileRepository
-	Emitter    *services.EmitterService
+	Repository            repositories.IProfileRepository
+	Emitter               services.IEmitterService
+	NationalityRepository repositories.INationalityRepository
 }
 
 func (h *ProfileController) GetOne(c echo.Context) error {
@@ -39,6 +40,10 @@ func (h *ProfileController) Create(c echo.Context) (err error) {
 	var profile models.Profile
 	c.Bind(&profile)
 
+	if _, err := h.NationalityRepository.GetById(c.Request().Context(), profile.NationalityId); err != nil {
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
+
 	profile.EscortId = c.Request().Header.Get(enums.UserId)
 
 	if err = profile.Validate(); err != nil {
@@ -57,6 +62,10 @@ func (h *ProfileController) Create(c echo.Context) (err error) {
 func (h *ProfileController) UpdateOne(c echo.Context) (err error) {
 	var profilePartial models.PartialProfile
 	c.Bind(&profilePartial)
+
+	if _, err := h.NationalityRepository.GetById(c.Request().Context(), profilePartial.NationalityId); err != nil {
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
 
 	userId := c.Request().Header.Get(enums.UserId)
 	profile, err := h.Repository.GetOne(c.Request().Context(), userId)

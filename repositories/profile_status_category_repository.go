@@ -52,6 +52,20 @@ func (r *ProfileStatusCategoryRepository) GetOneByName(ctx context.Context, name
 	return category, nil
 }
 
+func (r *ProfileStatusCategoryRepository) GetById(ctx context.Context, id string) (models.ProfileStatusCategory, error) {
+	query := "SELECT id, name FROM profile_status_category WHERE id = $1;"
+	row := r.Data.DB.QueryRowContext(ctx, query, id)
+
+	var category models.ProfileStatusCategory
+	err := row.Scan(&category.Id, &category.Name)
+
+	if err != nil {
+		return models.ProfileStatusCategory{}, err
+	}
+
+	return category, nil
+}
+
 func (r *ProfileStatusCategoryRepository) Count(ctx context.Context) (int, error) {
 	query := "SELECT COUNT(*) FROM profile_status_category;"
 	row := r.Data.DB.QueryRowContext(ctx, query)

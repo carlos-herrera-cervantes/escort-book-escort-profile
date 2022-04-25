@@ -11,7 +11,8 @@ import (
 )
 
 type AttentionSiteController struct {
-	Repository *repositories.AttentionSiteRepository
+	Repository                      repositories.IAttentionSiteRepository
+	AttentionSiteCategoryRepository repositories.IAttentionSiteCategoryRepository
 }
 
 func (h *AttentionSiteController) GetAll(c echo.Context) (err error) {
@@ -64,6 +65,10 @@ func (h *AttentionSiteController) GetById(c echo.Context) (err error) {
 func (h *AttentionSiteController) Create(c echo.Context) (err error) {
 	var site models.AttentionSite
 	c.Bind(&site)
+
+	if _, err := h.AttentionSiteCategoryRepository.GetById(c.Request().Context(), site.AttentionSiteCategoryId); err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
 
 	site.ProfileId = c.Request().Header.Get(enums.UserId)
 

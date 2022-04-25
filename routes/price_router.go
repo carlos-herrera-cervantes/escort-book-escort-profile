@@ -13,6 +13,9 @@ func BoostrapPriceRoutes(v *echo.Group) {
 		Repository: &repositories.PriceRepository{
 			Data: db.New(),
 		},
+		TimeCategoryRepository: &repositories.TimeCategoryRepository{
+			Data: db.New(),
+		},
 	}
 
 	v.GET("/escort/profile/prices", router.GetAll)

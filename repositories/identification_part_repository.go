@@ -39,6 +39,20 @@ func (r *IdentificationPartRepository) GetAll(
 	return parts, nil
 }
 
+func (r *IdentificationPartRepository) GetById(ctx context.Context, id string) (models.IdentificationPart, error) {
+	query := "SELECT id, name FROM identification_part WHERE id = $1;"
+	row := r.Data.DB.QueryRowContext(ctx, query, id)
+
+	var part models.IdentificationPart
+	err := row.Scan(&part.Id, &part.Name)
+
+	if err != nil {
+		return models.IdentificationPart{}, err
+	}
+
+	return part, nil
+}
+
 func (r *IdentificationPartRepository) Count(ctx context.Context) (int, error) {
 	query := "SELECT COUNT(*) FROM identification_part;"
 	row := r.Data.DB.QueryRowContext(ctx, query)

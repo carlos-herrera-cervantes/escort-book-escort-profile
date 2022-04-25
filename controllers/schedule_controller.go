@@ -11,7 +11,8 @@ import (
 )
 
 type ScheduleController struct {
-	Repository *repositories.ScheduleRepository
+	Repository    repositories.IScheduleRepository
+	DayRepository repositories.IDayRepository
 }
 
 func (h *ScheduleController) GetAll(c echo.Context) (err error) {
@@ -49,8 +50,12 @@ func (h *ScheduleController) GetById(c echo.Context) (err error) {
 
 func (h *ScheduleController) Create(c echo.Context) (err error) {
 	var schedule models.Schedule
-
 	c.Bind(&schedule)
+
+	if _, err := h.DayRepository.GetById(c.Request().Context(), schedule.DayId); err != nil {
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
+
 	schedule.ProfileId = c.Request().Header.Get(enums.UserId)
 
 	if err = schedule.Validate(); err != nil {

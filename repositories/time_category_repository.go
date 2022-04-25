@@ -38,6 +38,20 @@ func (r *TimeCategoryRepository) GetAll(ctx context.Context, offset, limit int) 
 	return categories, nil
 }
 
+func (r *TimeCategoryRepository) GetById(ctx context.Context, id string) (models.TimeCategory, error) {
+	query := "SELECT id, name, measurement_unit from time_category WHERE id = $1;"
+	row := r.Data.DB.QueryRowContext(ctx, query, id)
+
+	var category models.TimeCategory
+	err := row.Scan(&category.Id, &category.Name, &category.MeasurementUnit)
+
+	if err != nil {
+		return models.TimeCategory{}, err
+	}
+
+	return category, nil
+}
+
 func (r *TimeCategoryRepository) Count(ctx context.Context) (int, error) {
 	query := "SELECT COUNT(*) FROM time_category;"
 	row := r.Data.DB.QueryRowContext(ctx, query)
