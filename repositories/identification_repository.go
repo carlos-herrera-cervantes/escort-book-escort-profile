@@ -11,11 +11,9 @@ type IdentificationRepository struct {
 	Data *db.Data
 }
 
-func (r *IdentificationRepository) GetAll(
-	ctx context.Context, profileId string, offset, limit int,
-) ([]models.Identification, error) {
-	query := "SELECT * FROM identification WHERE escort_id = $3 OFFSET($1) LIMIT($2);"
-	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit, profileId)
+func (r *IdentificationRepository) GetAll(ctx context.Context, profileId string) ([]models.Identification, error) {
+	query := "SELECT * FROM identification WHERE escort_id = $1;"
+	rows, err := r.Data.DB.QueryContext(ctx, query, profileId)
 
 	if err != nil {
 		return nil, err

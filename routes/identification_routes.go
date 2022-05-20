@@ -20,6 +20,7 @@ func BoostrapIdentificationRoutes(v *echo.Group) {
 		},
 	}
 
+	v.GET("/escort/:id/profile/identifications", router.GetByExternal)
 	v.GET("/escort/profile/identifications", router.GetAll)
 	v.POST("/escort/profile/identifications", router.Create)
 	v.PATCH("/escort/profile/identifications/:id", router.UpdateOne)

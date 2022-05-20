@@ -18,5 +18,6 @@ func BoostrapProfileStatusRoutes(v *echo.Group) {
 		},
 	}
 
+	v.GET("/escort/:id/profile/status", router.GetByExternal)
 	v.PATCH("/escort/profile/status", router.UpdateOne)
 }

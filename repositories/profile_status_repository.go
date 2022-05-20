@@ -12,7 +12,11 @@ type ProfileStatusRepository struct {
 }
 
 func (r *ProfileStatusRepository) GetOne(ctx context.Context, id string) (models.ProfileStatus, error) {
-	query := "SELECT * FROM profile_status WHERE escort_id = $1;"
+	query := `SELECT a.*, b.name
+	          FROM profile_status a
+			  JOIN profile_status_category b
+			  ON a.profile_status_category_id = b.id
+			  WHERE escort_id = $1;`
 	row := r.Data.DB.QueryRowContext(ctx, query, id)
 
 	var profileStatus models.ProfileStatus
@@ -21,7 +25,9 @@ func (r *ProfileStatusRepository) GetOne(ctx context.Context, id string) (models
 		&profileStatus.ProfileId,
 		&profileStatus.ProfileStatusCategoryId,
 		&profileStatus.CreatedAt,
-		&profileStatus.UpdatedAt)
+		&profileStatus.UpdatedAt,
+		&profileStatus.Name,
+	)
 
 	if err != nil {
 		return models.ProfileStatus{}, err

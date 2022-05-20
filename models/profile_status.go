@@ -12,13 +12,11 @@ type ProfileStatus struct {
 	ProfileStatusCategoryId string    `json:"profileStatusCategoryId" validate:"required"`
 	CreatedAt               time.Time `json:"createdAt"`
 	UpdatedAt               time.Time `json:"updatedAt"`
+	Name                    string    `json:"name"`
 }
 
 type PartialProfileStatus struct {
 	ProfileStatusCategoryId string `json:"profileStatusCategoryId"`
 }
 
-func (p *ProfileStatus) SetDefaultValues() *ProfileStatus {
-	p.Id = uuid.NewString()
-	return p
-}
+func (p *ProfileStatus) SetDefaultValues() { p.Id = uuid.NewString() }

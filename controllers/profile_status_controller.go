@@ -14,6 +14,17 @@ type ProfileStatusController struct {
 	ProfileStatusCategoryRepository repositories.IProfileStatusCategoryRepository
 }
 
+func (h *ProfileStatusController) GetByExternal(c echo.Context) (err error) {
+	id := c.Param("id")
+	status, err := h.Repository.GetOne(c.Request().Context(), id)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
+
+	return c.JSON(http.StatusOK, status)
+}
+
 func (h *ProfileStatusController) UpdateOne(c echo.Context) (err error) {
 	var partialProfileStatus models.PartialProfileStatus
 	c.Bind(&partialProfileStatus)
