@@ -6,7 +6,6 @@ import (
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/services"
-	"escort-book-escort-profile/types"
 	"fmt"
 	"net/http"
 	"os"
@@ -20,29 +19,44 @@ type IdentificationController struct {
 	IdentificationCategoryRepository repositories.IIdentificationPartRepository
 }
 
-func (h *IdentificationController) GetAll(c echo.Context) (err error) {
-	var pager types.Pager
-	c.Bind(&pager)
+func (h *IdentificationController) GetByExternal(c echo.Context) (err error) {
+	id := c.Param("id")
+	identifications, err := h.Repository.GetAll(c.Request().Context(), id)
 
-	if err = pager.Validate(); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
+	for index := range identifications {
+		identifications[index].Path = fmt.Sprintf(
+			"%s/%s/%s",
+			os.Getenv("S3_ENPOINT"),
+			os.Getenv("S3"), identifications[index].Path,
+		)
+	}
+
+	return c.JSON(http.StatusOK, identifications)
+}
+
+func (h *IdentificationController) GetAll(c echo.Context) (err error) {
 	identifications, err := h.Repository.GetAll(
 		c.Request().Context(),
 		c.Request().Header.Get(enums.UserId),
-		pager.Offset,
-		pager.Limit,
 	)
-	number, _ := h.Repository.Count(c.Request().Context())
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	pagerResult := types.PagerResult{}
+	for index := range identifications {
+		identifications[index].Path = fmt.Sprintf(
+			"%s/%s/%s",
+			os.Getenv("S3_ENPOINT"),
+			os.Getenv("S3"), identifications[index].Path,
+		)
+	}
 
-	return c.JSON(http.StatusOK, pagerResult.GetPagerResult(&pager, number, identifications))
+	return c.JSON(http.StatusOK, identifications)
 }
 
 func (h *IdentificationController) Create(c echo.Context) (err error) {

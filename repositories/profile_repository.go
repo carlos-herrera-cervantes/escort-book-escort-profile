@@ -11,6 +11,40 @@ type ProfileRepository struct {
 	Data *db.Data
 }
 
+func (r *ProfileRepository) GetAll(ctx context.Context, offset, limit int) ([]models.Profile, error) {
+	query := "SELECT * FROM profile OFFSET($1) LIMIT($2);"
+	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit)
+	defer rows.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var escorts []models.Profile
+
+	for rows.Next() {
+		var escort models.Profile
+
+		rows.Scan(
+			&escort.Id,
+			&escort.EscortId,
+			&escort.FirstName,
+			&escort.LastName,
+			&escort.Email,
+			&escort.PhoneNumber,
+			&escort.Gender,
+			&escort.NationalityId,
+			&escort.Birthdate,
+			&escort.CreatedAt,
+			&escort.UpdatedAt,
+		)
+
+		escorts = append(escorts, escort)
+	}
+
+	return escorts, nil
+}
+
 func (r *ProfileRepository) GetOne(ctx context.Context, id string) (models.Profile, error) {
 	query := "SELECT * FROM profile WHERE escort_id = $1;"
 	row := r.Data.DB.QueryRowContext(ctx, query, id)
@@ -94,4 +128,15 @@ func (r *ProfileRepository) DeleteOne(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+func (r *ProfileRepository) Count(ctx context.Context) (int, error) {
+	query := "SELECT COUNT(*) FROM profile;"
+	row := r.Data.DB.QueryRowContext(ctx, query)
+
+	var number int
+
+	row.Scan(&number)
+
+	return number, nil
 }

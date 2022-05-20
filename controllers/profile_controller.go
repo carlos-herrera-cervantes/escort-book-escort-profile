@@ -5,6 +5,7 @@ import (
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/services"
+	"escort-book-escort-profile/types"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -14,6 +15,26 @@ type ProfileController struct {
 	Repository            repositories.IProfileRepository
 	Emitter               services.IEmitterService
 	NationalityRepository repositories.INationalityRepository
+}
+
+func (h *ProfileController) GetAll(c echo.Context) (err error) {
+	var pager types.Pager
+	c.Bind(&pager)
+
+	if err = pager.Validate(); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	escorts, err := h.Repository.GetAll(c.Request().Context(), pager.Offset, pager.Limit)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	number, _ := h.Repository.Count(c.Request().Context())
+	pagerResult := types.PagerResult{}
+
+	return c.JSON(http.StatusOK, pagerResult.GetPagerResult(&pager, number, escorts))
 }
 
 func (h *ProfileController) GetOne(c echo.Context) error {

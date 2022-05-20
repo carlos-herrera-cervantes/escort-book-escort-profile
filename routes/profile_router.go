@@ -20,6 +20,7 @@ func BoostrapProfileRoutes(v *echo.Group) {
 		},
 	}
 
+	v.GET("/escorts", router.GetAll)
 	v.GET("/escort/profile", router.GetOne)
 	v.GET("/escort/:id/profile", router.GetById)
 	v.POST("/escort/profile", router.Create)
