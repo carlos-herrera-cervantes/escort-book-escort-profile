@@ -55,10 +55,11 @@ func (h *ProfileStatusController) UpdateByExternal(c echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	if category.Name == "Locked" {
+	if category.Name == enums.Locked || category.Name == enums.Active {
 		go func() {
 			newBlockUserEvent := types.BlockUserEvent{
 				UserId: userId,
+				Status: category.Name,
 			}
 
 			if err = h.KafkaService.SendMessage(
