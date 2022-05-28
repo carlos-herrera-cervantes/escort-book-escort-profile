@@ -1,13 +1,15 @@
 package controllers
 
 import (
+	"context"
+	"log"
+	"net/http"
+
 	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/services"
 	"escort-book-escort-profile/types"
-	"log"
-	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
@@ -56,20 +58,7 @@ func (h *ProfileStatusController) UpdateByExternal(c echo.Context) (err error) {
 	}
 
 	if category.Name == enums.Locked || category.Name == enums.Active {
-		go func() {
-			newBlockUserEvent := types.BlockUserEvent{
-				UserId: userId,
-				Status: category.Name,
-			}
-
-			if err = h.KafkaService.SendMessage(
-				c.Request().Context(),
-				"block-user",
-				newBlockUserEvent,
-			); err != nil {
-				log.Println("WE CAN'T PROPAGATE THE PROFILE STATUS: ", err.Error())
-			}
-		}()
+		go h.emitMessage(c.Request().Context(), userId, category.Name)
 	}
 
 	return c.JSON(http.StatusOK, profileStatus)
@@ -108,5 +97,20 @@ func (h *ProfileStatusController) UpdateOne(c echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
+	if category.Name == enums.Deactivated {
+		go h.emitMessage(c.Request().Context(), userId, category.Name)
+	}
+
 	return c.JSON(http.StatusOK, profileStatus)
+}
+
+func (h *ProfileStatusController) emitMessage(ctx context.Context, userId, categoryName string) {
+	newBlockUserEvent := types.BlockUserEvent{
+		UserId: userId,
+		Status: categoryName,
+	}
+
+	if err := h.KafkaService.SendMessage(ctx, "block-user", newBlockUserEvent); err != nil {
+		log.Println("WE CAN'T PROPAGATE THE PROFILE STATUS: ", err.Error())
+	}
 }
