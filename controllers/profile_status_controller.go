@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -58,7 +59,16 @@ func (h *ProfileStatusController) UpdateByExternal(c echo.Context) (err error) {
 	}
 
 	if category.Name == enums.Locked || category.Name == enums.Active {
-		go h.emitMessage(c.Request().Context(), userId, category.Name)
+		go h.emitDisableMessage(c.Request().Context(), userId, category.Name)
+	}
+
+	if category.Name == enums.Deleted {
+		args := map[string]string{
+			"userId": userId,
+			"userType": c.Request().Header.Get("user-type"),
+			"userEmail": c.Request().Header.Get("user-email"),
+		}
+		go h.emitDeletionMessage(c.Request().Context(), args)
 	}
 
 	return c.JSON(http.StatusOK, profileStatus)
@@ -98,19 +108,42 @@ func (h *ProfileStatusController) UpdateOne(c echo.Context) (err error) {
 	}
 
 	if category.Name == enums.Deactivated {
-		go h.emitMessage(c.Request().Context(), userId, category.Name)
+		go h.emitDisableMessage(c.Request().Context(), userId, category.Name)
+	}
+
+	if category.Name == enums.Deleted {
+		args := map[string]string{
+			"userId": userId,
+			"userType": c.Request().Header.Get("user-type"),
+			"userEmail": c.Request().Header.Get("user-email"),
+		}
+		go h.emitDeletionMessage(c.Request().Context(), args)
 	}
 
 	return c.JSON(http.StatusOK, profileStatus)
 }
 
-func (h *ProfileStatusController) emitMessage(ctx context.Context, userId, categoryName string) {
+func (h *ProfileStatusController) emitDisableMessage(ctx context.Context, userId, categoryName string) {
 	newBlockUserEvent := types.BlockUserEvent{
 		UserId: userId,
 		Status: categoryName,
 	}
+	message, _ := json.Marshal(newBlockUserEvent)
 
-	if err := h.KafkaService.SendMessage(ctx, "block-user", newBlockUserEvent); err != nil {
+	if err := h.KafkaService.SendMessage(ctx, "block-user", message); err != nil {
 		log.Println("WE CAN'T PROPAGATE THE PROFILE STATUS: ", err.Error())
+	}
+}
+
+func (h *ProfileStatusController) emitDeletionMessage(ctx context.Context, args map[string]string) {
+	deleteUserEvent := types.DeleteUserEvent{
+		UserId: args["userId"],
+		UserType: args["userType"],
+		UserEmail: args["userEmail"],
+	}
+	message, _ := json.Marshal(deleteUserEvent)
+
+	if err := h.KafkaService.SendMessage(ctx, "user-delete-account", message); err != nil {
+		log.Println("WE CAN'T PROPAGATE DELETION OF CUSTOMER: ", err.Error())
 	}
 }

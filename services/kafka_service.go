@@ -2,9 +2,7 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"escort-book-escort-profile/db"
-	"escort-book-escort-profile/types"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
@@ -12,15 +10,13 @@ type KafkaService struct {
 	Producer *db.Producer
 }
 
-func (k *KafkaService) SendMessage(ctx context.Context, topic string, blockUserEvent types.BlockUserEvent) error {
-	value, _ := json.Marshal(blockUserEvent)
-
+func (k *KafkaService) SendMessage(ctx context.Context, topic string, message []byte) error {
 	err := k.Producer.KafkaProducer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{
 			Topic:     &topic,
 			Partition: kafka.PartitionAny,
 		},
-		Value: value,
+		Value: message,
 	}, nil)
 
 	if err != nil {
