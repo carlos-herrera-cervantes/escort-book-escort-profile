@@ -69,6 +69,7 @@ func (h *ProfileStatusController) UpdateByExternal(c echo.Context) (err error) {
 			"userEmail": c.Request().Header.Get("user-email"),
 		}
 		go h.emitDeletionMessage(c.Request().Context(), args)
+		go h.emitDisableMessage(c.Request().Context(), userId, category.Name)
 	}
 
 	return c.JSON(http.StatusOK, profileStatus)
@@ -118,6 +119,7 @@ func (h *ProfileStatusController) UpdateOne(c echo.Context) (err error) {
 			"userEmail": c.Request().Header.Get("user-email"),
 		}
 		go h.emitDeletionMessage(c.Request().Context(), args)
+		go h.emitDisableMessage(c.Request().Context(), userId, category.Name)
 	}
 
 	return c.JSON(http.StatusOK, profileStatus)
