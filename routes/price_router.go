@@ -2,19 +2,19 @@ package routes
 
 import (
 	"escort-book-escort-profile/controllers"
-	"escort-book-escort-profile/db"
 	"escort-book-escort-profile/repositories"
+	"escort-book-escort-profile/singleton"
 
 	"github.com/labstack/echo/v4"
 )
 
-func BoostrapPriceRoutes(v *echo.Group) {
+func BootstrapPriceRoutes(v *echo.Group) {
 	router := &controllers.PriceController{
 		Repository: &repositories.PriceRepository{
-			Data: db.New(),
+			Data: singleton.NewPostgresClient(),
 		},
 		TimeCategoryRepository: &repositories.TimeCategoryRepository{
-			Data: db.New(),
+			Data: singleton.NewPostgresClient(),
 		},
 	}
 

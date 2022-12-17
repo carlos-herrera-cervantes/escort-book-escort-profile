@@ -1,8 +1,6 @@
 package enums
 
-const (
-	Deactivated string = "Deactivated"
-	Deleted     string = "Deleted"
-	Locked      string = "Locked"
-	Active      string = "Active"
-)
+const Deactivated string = "Deactivated"
+const Deleted string = "Deleted"
+const Locked string = "Locked"
+const Active string = "Active"

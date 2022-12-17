@@ -2,13 +2,14 @@ package repositories
 
 import (
 	"context"
-	"escort-book-escort-profile/db"
-	"escort-book-escort-profile/models"
 	"time"
+
+	"escort-book-escort-profile/models"
+	"escort-book-escort-profile/singleton"
 )
 
 type ProfileStatusRepository struct {
-	Data *db.Data
+	Data *singleton.PostgresClient
 }
 
 func (r *ProfileStatusRepository) GetOne(ctx context.Context, id string) (models.ProfileStatus, error) {
@@ -17,9 +18,9 @@ func (r *ProfileStatusRepository) GetOne(ctx context.Context, id string) (models
 			  JOIN profile_status_category b
 			  ON a.profile_status_category_id = b.id
 			  WHERE escort_id = $1;`
-	row := r.Data.DB.QueryRowContext(ctx, query, id)
+	row := r.Data.EscortProfileDB.QueryRowContext(ctx, query, id)
 
-	var profileStatus models.ProfileStatus
+	profileStatus := models.ProfileStatus{}
 	err := row.Scan(
 		&profileStatus.Id,
 		&profileStatus.ProfileId,
@@ -30,7 +31,7 @@ func (r *ProfileStatusRepository) GetOne(ctx context.Context, id string) (models
 	)
 
 	if err != nil {
-		return models.ProfileStatus{}, err
+		return profileStatus, err
 	}
 
 	return profileStatus, nil
@@ -40,7 +41,7 @@ func (r *ProfileStatusRepository) Create(ctx context.Context, profileStatus *mod
 	query := "INSERT INTO profile_status VALUES ($1, $2, $3, $4, $5)"
 	profileStatus.SetDefaultValues()
 
-	_, err := r.Data.DB.ExecContext(
+	_, err := r.Data.EscortProfileDB.ExecContext(
 		ctx,
 		query,
 		profileStatus.Id,
@@ -50,7 +51,7 @@ func (r *ProfileStatusRepository) Create(ctx context.Context, profileStatus *mod
 		time.Now().UTC())
 
 	if err != nil {
-		return nil
+		return err
 	}
 
 	return nil
@@ -59,7 +60,7 @@ func (r *ProfileStatusRepository) Create(ctx context.Context, profileStatus *mod
 func (r *ProfileStatusRepository) UpdateOne(ctx context.Context, id string, profileStatus *models.ProfileStatus) error {
 	query := "UPDATE profile_status SET profile_status_category_id = $1, updated_at = $2 WHERE escort_id = $3;"
 
-	_, err := r.Data.DB.ExecContext(
+	_, err := r.Data.EscortProfileDB.ExecContext(
 		ctx,
 		query,
 		profileStatus.ProfileStatusCategoryId,

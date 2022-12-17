@@ -1,11 +1,12 @@
 package controllers
 
 import (
+	"net/http"
+
 	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/types"
-	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
@@ -16,51 +17,63 @@ type PriceController struct {
 }
 
 func (h *PriceController) GetAll(c echo.Context) (err error) {
-	var pager types.Pager
-	c.Bind(&pager)
+	pager := types.Pager{}
+	_ = c.Bind(&pager)
 
 	if err = pager.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
+	ctx := c.Request().Context()
 	userId := c.Request().Header.Get(enums.UserId)
-	prices, err := h.Repository.GetAll(c.Request().Context(), userId, pager.Offset, pager.Limit)
-	number, _ := h.Repository.Count(c.Request().Context(), userId)
+	prices, err := h.Repository.GetAll(ctx, userId, pager.Offset, pager.Limit)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	pagerResult := types.PagerResult{}
+	totalRows, _ := h.Repository.Count(ctx, userId)
+	pagerResult := types.PagerResult{
+		Pager: pager,
+		Total: totalRows,
+		Data:  prices,
+	}
 
-	return c.JSON(http.StatusOK, pagerResult.GetPagerResult(&pager, number, prices))
+	return c.JSON(http.StatusOK, pagerResult.Pages())
 }
 
 func (h *PriceController) GetById(c echo.Context) (err error) {
-	var pager types.Pager
-	c.Bind(&pager)
+	pager := types.Pager{}
+	_ = c.Bind(&pager)
 
 	if err = pager.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	prices, err := h.Repository.GetAll(c.Request().Context(), c.Param("id"), pager.Offset, pager.Limit)
-	number, _ := h.Repository.Count(c.Request().Context(), c.Param("id"))
+	ctx := c.Request().Context()
+	profileId := c.Param("id")
+	prices, err := h.Repository.GetAll(ctx, profileId, pager.Offset, pager.Limit)
+	totalRows, _ := h.Repository.Count(ctx, profileId)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	pagerResult := types.PagerResult{}
+	pagerResult := types.PagerResult{
+		Pager: pager,
+		Total: totalRows,
+		Data:  prices,
+	}
 
-	return c.JSON(http.StatusOK, pagerResult.GetPagerResult(&pager, number, prices))
+	return c.JSON(http.StatusOK, pagerResult.Pages())
 }
 
 func (h *PriceController) Create(c echo.Context) (err error) {
-	var price models.Price
-	c.Bind(&price)
+	price := models.Price{}
+	ctx := c.Request().Context()
+	_ = c.Bind(&price)
 
-	if _, err := h.TimeCategoryRepository.GetById(c.Request().Context(), price.TimeCategoryId); err != nil {
+	if _, err := h.TimeCategoryRepository.GetById(ctx, price.TimeCategoryId); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
 
@@ -70,7 +83,7 @@ func (h *PriceController) Create(c echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if err = h.Repository.Create(c.Request().Context(), &price); err != nil {
+	if err = h.Repository.Create(ctx, &price); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -78,15 +91,16 @@ func (h *PriceController) Create(c echo.Context) (err error) {
 }
 
 func (h *PriceController) UpdateOne(c echo.Context) (err error) {
-	var partialPrice models.PricePartial
-	c.Bind(&partialPrice)
+	partialPrice := models.PricePartial{}
+	ctx := c.Request().Context()
+	_ = c.Bind(&partialPrice)
 
-	if _, err := h.TimeCategoryRepository.GetById(c.Request().Context(), partialPrice.TimeCategoryId); err != nil {
+	if _, err := h.TimeCategoryRepository.GetById(ctx, partialPrice.TimeCategoryId); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
 
 	userId := c.Request().Header.Get(enums.UserId)
-	price, err := h.Repository.GetOne(c.Request().Context(), userId)
+	price, err := h.Repository.GetOne(ctx, userId)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -94,7 +108,7 @@ func (h *PriceController) UpdateOne(c echo.Context) (err error) {
 
 	partialPrice.MapPartial(&price)
 
-	if err = h.Repository.UpdateOne(c.Request().Context(), userId, &price); err != nil {
+	if err = h.Repository.UpdateOne(ctx, userId, &price); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -103,12 +117,13 @@ func (h *PriceController) UpdateOne(c echo.Context) (err error) {
 
 func (h *PriceController) DeleteOne(c echo.Context) (err error) {
 	userId := c.Request().Header.Get(enums.UserId)
+	ctx := c.Request().Context()
 
-	if _, err = h.Repository.GetOne(c.Request().Context(), userId); err != nil {
+	if _, err = h.Repository.GetOne(ctx, userId); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.DeleteOne(c.Request().Context(), userId); err != nil {
+	if err = h.Repository.DeleteOne(ctx, userId); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

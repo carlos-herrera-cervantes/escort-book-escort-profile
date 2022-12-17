@@ -29,31 +29,29 @@ type PagerResult struct {
 	Previous int         `json:"previous"`
 	Total    int         `json:"total"`
 	Data     interface{} `json:"data"`
+	Pager    Pager       `json:"-"`
 }
 
-func (p *PagerResult) GetPagerResult(pager *Pager, totalRows int, data interface{}) *PagerResult {
+func (p *PagerResult) Pages() *PagerResult {
 	var current int
 
-	if pager.Offset == 0 {
-		current = 1 * pager.Limit
+	if p.Pager.Offset == 0 {
+		current = 1 * p.Pager.Limit
 	} else {
-		current = pager.Offset * pager.Limit
+		current = p.Pager.Offset * p.Pager.Limit
 	}
 
-	if current < totalRows {
-		p.Next = pager.Offset + 1
+	if current < p.Total {
+		p.Next = p.Pager.Offset + 1
 	} else {
 		p.Next = 0
 	}
 
-	if current > pager.Limit {
-		p.Previous = pager.Offset - 1
+	if current > p.Pager.Limit {
+		p.Previous = p.Pager.Offset - 1
 	} else {
 		p.Previous = 0
 	}
-
-	p.Total = totalRows
-	p.Data = data
 
 	return p
 }

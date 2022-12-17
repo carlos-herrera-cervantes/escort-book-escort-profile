@@ -2,30 +2,30 @@ package repositories
 
 import (
 	"context"
-	"escort-book-escort-profile/db"
+
 	"escort-book-escort-profile/models"
+	"escort-book-escort-profile/singleton"
 )
 
 type IdentificationPartRepository struct {
-	Data *db.Data
+	Data *singleton.PostgresClient
 }
 
 func (r *IdentificationPartRepository) GetAll(
 	ctx context.Context, offset, limit int,
 ) ([]models.IdentificationPart, error) {
 	query := "SELECT * FROM identification_part OFFSET($1) LIMIT($2);"
-	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit)
+	rows, err := r.Data.EscortProfileDB.QueryContext(ctx, query, offset, limit)
+	parts := []models.IdentificationPart{}
 
 	if err != nil {
-		return nil, err
+		return parts, err
 	}
 
 	defer rows.Close()
 
-	var parts []models.IdentificationPart
-
 	for rows.Next() {
-		var part models.IdentificationPart
+		part := models.IdentificationPart{}
 
 		rows.Scan(
 			&part.Id,
@@ -41,13 +41,13 @@ func (r *IdentificationPartRepository) GetAll(
 
 func (r *IdentificationPartRepository) GetById(ctx context.Context, id string) (models.IdentificationPart, error) {
 	query := "SELECT id, name FROM identification_part WHERE id = $1;"
-	row := r.Data.DB.QueryRowContext(ctx, query, id)
+	row := r.Data.EscortProfileDB.QueryRowContext(ctx, query, id)
 
-	var part models.IdentificationPart
+	part := models.IdentificationPart{}
 	err := row.Scan(&part.Id, &part.Name)
 
 	if err != nil {
-		return models.IdentificationPart{}, err
+		return part, err
 	}
 
 	return part, nil
@@ -55,7 +55,7 @@ func (r *IdentificationPartRepository) GetById(ctx context.Context, id string) (
 
 func (r *IdentificationPartRepository) Count(ctx context.Context) (int, error) {
 	query := "SELECT COUNT(*) FROM identification_part;"
-	row := r.Data.DB.QueryRowContext(ctx, query)
+	row := r.Data.EscortProfileDB.QueryRowContext(ctx, query)
 
 	var number int
 

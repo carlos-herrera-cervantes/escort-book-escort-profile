@@ -1,7 +1,5 @@
 package enums
 
-const (
-	Male         string = "Male"
-	Female       string = "Female"
-	NotSpecified string = "NotSpecified"
-)
+const Male string = "Male"
+const Female string = "Female"
+const NotSpecified string = "NotSpecified"

@@ -2,21 +2,23 @@ package listeners
 
 import (
 	"context"
-	"escort-book-escort-profile/db"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/services"
+	"escort-book-escort-profile/singleton"
 )
 
-func BoostrapListeners() {
+func BootstrapListeners() {
 	listener := ProfileStatusListener{
 		ProfileStatusRepository: &repositories.ProfileStatusRepository{
-			Data: db.New(),
+			Data: singleton.NewPostgresClient(),
 		},
 		ProfileStatusCategoryRepository: &repositories.ProfileStatusCategoryRepository{
-			Data: db.New(),
+			Data: singleton.NewPostgresClient(),
 		},
 	}
-	emitterService := services.EmitterService{}
+	emitterService := services.EmitterService{
+		Emitter: singleton.NewEmitter(),
+	}
 
 	createProfileStatusListener := make(chan interface{})
 	emitterService.AddListener("create.profile.status", createProfileStatusListener)

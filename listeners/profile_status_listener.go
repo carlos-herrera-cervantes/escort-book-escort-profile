@@ -2,14 +2,19 @@ package listeners
 
 import (
 	"context"
+	"fmt"
+
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
-	"log"
+
+	log "github.com/inconshreveable/log15"
 )
 
+var logger = log.New("listeners")
+
 type ProfileStatusListener struct {
-	ProfileStatusRepository         *repositories.ProfileStatusRepository
-	ProfileStatusCategoryRepository *repositories.ProfileStatusCategoryRepository
+	ProfileStatusRepository         repositories.IProfileStatusRepository
+	ProfileStatusCategoryRepository repositories.IProfileStatusCategoryRepository
 }
 
 func (l *ProfileStatusListener) HandleCreateProfile(ctx context.Context, listener chan interface{}) {
@@ -19,7 +24,10 @@ func (l *ProfileStatusListener) HandleCreateProfile(ctx context.Context, listene
 			profile := event.(models.Profile)
 			category, err := l.ProfileStatusCategoryRepository.GetOneByName(ctx, "In Review")
 
-			log.Println("ERROR RETRIEVING CATEGORY: ", err)
+			if err != nil {
+				log.Error(fmt.Sprintf("ERROR RETRIEVING CATEGORY: %s", err.Error()))
+				continue
+			}
 
 			profileStatus := models.ProfileStatus{
 				ProfileId:               profile.Id,
@@ -27,7 +35,7 @@ func (l *ProfileStatusListener) HandleCreateProfile(ctx context.Context, listene
 			}
 
 			if err := l.ProfileStatusRepository.Create(ctx, &profileStatus); err != nil {
-				log.Println("LISTENER ERROR: ", err)
+				log.Error(fmt.Sprintf("LISTENER ERROR: %s", err.Error()))
 			}
 		}
 	}()

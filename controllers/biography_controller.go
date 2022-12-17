@@ -1,20 +1,24 @@
 package controllers
 
 import (
+	"net/http"
+
 	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
-	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
 
 type BiographyController struct {
-	Repository *repositories.BiographyRepository
+	Repository repositories.IBiographyRepository
 }
 
 func (h *BiographyController) GetOne(c echo.Context) error {
-	biography, err := h.Repository.GetOne(c.Request().Context(), c.Request().Header.Get(enums.UserId))
+	biography, err := h.Repository.GetOne(
+		c.Request().Context(),
+		c.Request().Header.Get(enums.UserId),
+	)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -35,7 +39,8 @@ func (h *BiographyController) GetById(c echo.Context) error {
 
 func (h *BiographyController) Create(c echo.Context) (err error) {
 	var biography models.Biography
-	c.Bind(&biography)
+
+	_ = c.Bind(&biography)
 	biography.ProfileId = c.Request().Header.Get(enums.UserId)
 
 	if err = biography.Validate(); err != nil {
@@ -50,21 +55,23 @@ func (h *BiographyController) Create(c echo.Context) (err error) {
 }
 
 func (h *BiographyController) UpdateOne(c echo.Context) (err error) {
-	var biography models.Biography
-	c.Bind(&biography)
+	biography := models.Biography{}
+	_ = c.Bind(&biography)
 
+	ctx := c.Request().Context()
 	userId := c.Request().Header.Get(enums.UserId)
+
 	biography.ProfileId = userId
 
 	if err = biography.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if _, err = h.Repository.GetOne(c.Request().Context(), userId); err != nil {
+	if _, err = h.Repository.GetOne(ctx, userId); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.UpdateOne(c.Request().Context(), userId, &biography); err != nil {
+	if err = h.Repository.UpdateOne(ctx, userId, &biography); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -73,12 +80,13 @@ func (h *BiographyController) UpdateOne(c echo.Context) (err error) {
 
 func (h *BiographyController) DeleteOne(c echo.Context) (err error) {
 	userId := c.Request().Header.Get(enums.UserId)
+	ctx := c.Request().Context()
 
-	if _, err = h.Repository.GetOne(c.Request().Context(), userId); err != nil {
+	if _, err = h.Repository.GetOne(ctx, userId); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.DeleteOne(c.Request().Context(), userId); err != nil {
+	if err = h.Repository.DeleteOne(ctx, userId); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

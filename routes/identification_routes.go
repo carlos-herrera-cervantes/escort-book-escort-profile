@@ -2,21 +2,23 @@ package routes
 
 import (
 	"escort-book-escort-profile/controllers"
-	"escort-book-escort-profile/db"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/services"
+	"escort-book-escort-profile/singleton"
 
 	"github.com/labstack/echo/v4"
 )
 
-func BoostrapIdentificationRoutes(v *echo.Group) {
+func BootstrapIdentificationRoutes(v *echo.Group) {
 	router := &controllers.IdentificationController{
 		Repository: &repositories.IdentificationRepository{
-			Data: db.New(),
+			Data: singleton.NewPostgresClient(),
 		},
-		S3Service: &services.S3Service{},
+		S3Service: &services.S3Service{
+			S3Client: singleton.NewS3Client(),
+		},
 		IdentificationCategoryRepository: &repositories.IdentificationPartRepository{
-			Data: db.New(),
+			Data: singleton.NewPostgresClient(),
 		},
 	}
 

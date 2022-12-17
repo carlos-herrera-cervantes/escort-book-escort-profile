@@ -2,19 +2,19 @@ package routes
 
 import (
 	"escort-book-escort-profile/controllers"
-	"escort-book-escort-profile/db"
 	"escort-book-escort-profile/repositories"
+	"escort-book-escort-profile/singleton"
 
 	"github.com/labstack/echo/v4"
 )
 
-func BoostrapServiceRoutes(v *echo.Group) {
+func BootstrapServiceRoutes(v *echo.Group) {
 	router := &controllers.ServiceController{
 		Repository: &repositories.ServiceRepository{
-			Data: db.New(),
+			Data: singleton.NewPostgresClient(),
 		},
 		ServiceCategoryRepository: &repositories.ServiceCategoryRepository{
-			Data: db.New(),
+			Data: singleton.NewPostgresClient(),
 		},
 	}
 

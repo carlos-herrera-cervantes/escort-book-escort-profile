@@ -1,55 +1,36 @@
 package controllers
 
 import (
+	"fmt"
+	"net/http"
+
+	"escort-book-escort-profile/config"
 	"escort-book-escort-profile/constants"
 	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/services"
 	"escort-book-escort-profile/types"
-	"fmt"
-	"net/http"
-	"os"
 
 	"github.com/labstack/echo/v4"
 )
 
 type PhotoController struct {
-	Repository *repositories.PhotoRepository
-	S3Service  *services.S3Service
+	Repository repositories.IPhotoRepository
+	S3Service  services.IS3Service
 }
 
 func (h *PhotoController) GetAll(c echo.Context) (err error) {
-	var pager types.Pager
-	c.Bind(&pager)
+	pager := types.Pager{}
+	_ = c.Bind(&pager)
 
 	if err = pager.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
+	ctx := c.Request().Context()
 	userId := c.Request().Header.Get(enums.UserId)
-	photos, err := h.Repository.GetAll(c.Request().Context(), userId, pager.Offset, pager.Limit)
-	number, _ := h.Repository.Count(c.Request().Context(), userId)
-
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	pagerResult := types.PagerResult{}
-
-	return c.JSON(http.StatusOK, pagerResult.GetPagerResult(&pager, number, photos))
-}
-
-func (h *PhotoController) GetById(c echo.Context) (err error) {
-	var pager types.Pager
-	c.Bind(&pager)
-
-	if err = pager.Validate(); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	}
-
-	photos, err := h.Repository.GetAll(c.Request().Context(), c.Param("id"), pager.Offset, pager.Limit)
-	number, _ := h.Repository.Count(c.Request().Context(), c.Param("id"))
+	photos, err := h.Repository.GetAll(ctx, userId, pager.Offset, pager.Limit)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -58,14 +39,56 @@ func (h *PhotoController) GetById(c echo.Context) (err error) {
 	for index := range photos {
 		photos[index].Path = fmt.Sprintf(
 			"%s/%s/%s",
-			os.Getenv("S3_ENPOINT"),
-			os.Getenv("S3"), photos[index].Path,
+			config.InitS3().Endpoint,
+			config.InitS3().Buckets.EscortProfile,
+			photos[index].Path,
 		)
 	}
 
-	pagerResult := types.PagerResult{}
+	totalRows, _ := h.Repository.Count(ctx, userId)
+	pagerResult := types.PagerResult{
+		Pager: pager,
+		Total: totalRows,
+		Data:  photos,
+	}
 
-	return c.JSON(http.StatusOK, pagerResult.GetPagerResult(&pager, number, photos))
+	return c.JSON(http.StatusOK, pagerResult.Pages())
+}
+
+func (h *PhotoController) GetById(c echo.Context) (err error) {
+	pager := types.Pager{}
+	_ = c.Bind(&pager)
+
+	if err = pager.Validate(); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	ctx := c.Request().Context()
+	profileId := c.Param("id")
+	photos, err := h.Repository.GetAll(ctx, profileId, pager.Offset, pager.Limit)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	totalRows, _ := h.Repository.Count(ctx, profileId)
+
+	for index := range photos {
+		photos[index].Path = fmt.Sprintf(
+			"%s/%s/%s",
+			config.InitS3().Endpoint,
+			config.InitS3().Buckets.EscortProfile,
+			photos[index].Path,
+		)
+	}
+
+	pagerResult := types.PagerResult{
+		Pager: pager,
+		Total: totalRows,
+		Data:  photos,
+	}
+
+	return c.JSON(http.StatusOK, pagerResult.Pages())
 }
 
 func (h *PhotoController) Create(c echo.Context) (err error) {
@@ -76,13 +99,11 @@ func (h *PhotoController) Create(c echo.Context) (err error) {
 	}
 
 	src, _ := image.Open()
-
 	defer src.Close()
-	userId := c.Request().Header.Get(enums.UserId)
 
+	userId := c.Request().Header.Get(enums.UserId)
 	url, err := h.S3Service.Upload(
-		c.Request().Context(),
-		os.Getenv("S3"),
+		config.InitS3().Buckets.EscortProfile,
 		image.Filename,
 		userId,
 		src,
@@ -112,12 +133,13 @@ func (h *PhotoController) Create(c echo.Context) (err error) {
 
 func (h *PhotoController) DeleteOne(c echo.Context) (err error) {
 	id := c.Param("id")
+	ctx := c.Request().Context()
 
-	if _, err = h.Repository.GetOne(c.Request().Context(), id); err != nil {
+	if _, err = h.Repository.GetOne(ctx, id); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.DeleteOne(c.Request().Context(), id); err != nil {
+	if err = h.Repository.DeleteOne(ctx, id); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

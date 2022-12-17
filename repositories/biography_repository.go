@@ -2,20 +2,21 @@ package repositories
 
 import (
 	"context"
-	"escort-book-escort-profile/db"
-	"escort-book-escort-profile/models"
 	"time"
+
+	"escort-book-escort-profile/models"
+	"escort-book-escort-profile/singleton"
 )
 
 type BiographyRepository struct {
-	Data *db.Data
+	Data *singleton.PostgresClient
 }
 
 func (r *BiographyRepository) GetOne(ctx context.Context, id string) (models.Biography, error) {
 	query := "SELECT * FROM biography WHERE escort_id = $1;"
-	row := r.Data.DB.QueryRowContext(ctx, query, id)
+	row := r.Data.EscortProfileDB.QueryRowContext(ctx, query, id)
 
-	var biography models.Biography
+	biography := models.Biography{}
 	err := row.Scan(
 		&biography.Id,
 		&biography.Description,
@@ -34,7 +35,7 @@ func (r *BiographyRepository) Create(ctx context.Context, biography *models.Biog
 	query := "INSERT INTO biography VALUES ($1, $2, $3, $4, $5);"
 	biography.SetDefaultValues()
 
-	_, err := r.Data.DB.ExecContext(
+	_, err := r.Data.EscortProfileDB.ExecContext(
 		ctx,
 		query,
 		biography.Id,
@@ -53,7 +54,7 @@ func (r *BiographyRepository) Create(ctx context.Context, biography *models.Biog
 func (r *BiographyRepository) UpdateOne(ctx context.Context, id string, biography *models.Biography) error {
 	query := "UPDATE biography set description = $1, updated_at = $2 WHERE escort_id = $3;"
 
-	_, err := r.Data.DB.ExecContext(
+	_, err := r.Data.EscortProfileDB.ExecContext(
 		ctx,
 		query,
 		biography.Description,
@@ -69,7 +70,7 @@ func (r *BiographyRepository) UpdateOne(ctx context.Context, id string, biograph
 
 func (r *BiographyRepository) DeleteOne(ctx context.Context, id string) error {
 	query := "DELETE FROM biography WHERE escort_id = $1;"
-	_, err := r.Data.DB.ExecContext(ctx, query, id)
+	_, err := r.Data.EscortProfileDB.ExecContext(ctx, query, id)
 
 	if err != nil {
 		return err

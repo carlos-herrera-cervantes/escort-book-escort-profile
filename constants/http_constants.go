@@ -1,5 +1,3 @@
 package constants
 
-const (
-	MaxImageSize int64 = 2000000
-)
+const MaxImageSize int64 = 2000000

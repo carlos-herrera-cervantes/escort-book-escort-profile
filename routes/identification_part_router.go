@@ -2,16 +2,16 @@ package routes
 
 import (
 	"escort-book-escort-profile/controllers"
-	"escort-book-escort-profile/db"
 	"escort-book-escort-profile/repositories"
+	"escort-book-escort-profile/singleton"
 
 	"github.com/labstack/echo/v4"
 )
 
-func BoostrapIdentificationPartRoutes(v *echo.Group) {
+func BootstrapIdentificationPartRoutes(v *echo.Group) {
 	router := &controllers.IdentificationPartController{
 		Repository: &repositories.IdentificationPartRepository{
-			Data: db.New(),
+			Data: singleton.NewPostgresClient(),
 		},
 	}
 

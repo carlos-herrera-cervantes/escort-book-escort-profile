@@ -2,29 +2,29 @@ package repositories
 
 import (
 	"context"
-	"escort-book-escort-profile/db"
-	"escort-book-escort-profile/models"
 	"time"
+
+	"escort-book-escort-profile/models"
+	"escort-book-escort-profile/singleton"
 )
 
 type IdentificationRepository struct {
-	Data *db.Data
+	Data *singleton.PostgresClient
 }
 
 func (r *IdentificationRepository) GetAll(ctx context.Context, profileId string) ([]models.Identification, error) {
 	query := "SELECT * FROM identification WHERE escort_id = $1;"
-	rows, err := r.Data.DB.QueryContext(ctx, query, profileId)
+	rows, err := r.Data.EscortProfileDB.QueryContext(ctx, query, profileId)
+	identifications := []models.Identification{}
 
 	if err != nil {
-		return nil, err
+		return identifications, err
 	}
 
 	defer rows.Close()
 
-	var identifications []models.Identification
-
 	for rows.Next() {
-		var identification models.Identification
+		identification := models.Identification{}
 
 		rows.Scan(
 			&identification.Id,
@@ -42,9 +42,9 @@ func (r *IdentificationRepository) GetAll(ctx context.Context, profileId string)
 
 func (r *IdentificationRepository) GetOne(ctx context.Context, id string) (models.Identification, error) {
 	query := "SELECT * FROM identification WHERE id = $1;"
-	row := r.Data.DB.QueryRowContext(ctx, query, id)
+	row := r.Data.EscortProfileDB.QueryRowContext(ctx, query, id)
 
-	var identification models.Identification
+	identification := models.Identification{}
 	err := row.Scan(
 		&identification.Id,
 		&identification.Path,
@@ -64,7 +64,7 @@ func (r *IdentificationRepository) Create(ctx context.Context, identification *m
 	query := "INSERT INTO identification VALUES ($1, $2, $3, $4, $5, $6);"
 	identification.SetDefaultValues()
 
-	_, err := r.Data.DB.ExecContext(
+	_, err := r.Data.EscortProfileDB.ExecContext(
 		ctx,
 		query,
 		identification.Id,
@@ -85,7 +85,7 @@ func (r *IdentificationRepository) UpdateOne(
 	ctx context.Context, id string, identification *models.Identification,
 ) error {
 	query := "UPDATE identification SET path = $1, updated_at = $2 WHERE id = $3;"
-	_, err := r.Data.DB.ExecContext(ctx, query, identification.Path, time.Now().UTC(), id)
+	_, err := r.Data.EscortProfileDB.ExecContext(ctx, query, identification.Path, time.Now().UTC(), id)
 
 	if err != nil {
 		return err
@@ -96,7 +96,7 @@ func (r *IdentificationRepository) UpdateOne(
 
 func (r *IdentificationRepository) Count(ctx context.Context) (int, error) {
 	query := "SELECT COUNT(*) FROM identification;"
-	row := r.Data.DB.QueryRowContext(ctx, query)
+	row := r.Data.EscortProfileDB.QueryRowContext(ctx, query)
 
 	var number int
 

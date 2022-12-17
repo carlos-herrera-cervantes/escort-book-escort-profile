@@ -1,11 +1,12 @@
 package controllers
 
 import (
+	"net/http"
+
 	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/types"
-	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
@@ -16,43 +17,59 @@ type ScheduleController struct {
 }
 
 func (h *ScheduleController) GetAll(c echo.Context) (err error) {
-	var pager types.Pager
-	c.Bind(&pager)
+	pager := types.Pager{}
+	_ = c.Bind(&pager)
 
+	if err := pager.Validate(); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	ctx := c.Request().Context()
 	userId := c.Request().Header.Get(enums.UserId)
-	schedules, err := h.Repository.GetAll(c.Request().Context(), userId, pager.Offset, pager.Limit)
-	number, _ := h.Repository.Count(c.Request().Context(), userId)
+	schedules, err := h.Repository.GetAll(ctx, userId, pager.Offset, pager.Limit)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	pagerResult := types.PagerResult{}
+	totalRows, _ := h.Repository.Count(ctx, userId)
+	pagerResult := types.PagerResult{
+		Pager: pager,
+		Total: totalRows,
+		Data:  schedules,
+	}
 
-	return c.JSON(http.StatusOK, pagerResult.GetPagerResult(&pager, number, schedules))
+	return c.JSON(http.StatusOK, pagerResult.Pages())
 }
 
 func (h *ScheduleController) GetById(c echo.Context) (err error) {
-	var pager types.Pager
-	c.Bind(&pager)
+	pager := types.Pager{}
+	ctx := c.Request().Context()
+	_ = c.Bind(&pager)
 
-	schedules, err := h.Repository.GetAll(c.Request().Context(), c.Param("id"), pager.Offset, pager.Limit)
-	number, _ := h.Repository.Count(c.Request().Context(), c.Param("id"))
+	profileId := c.Param("id")
+	schedules, err := h.Repository.GetAll(ctx, profileId, pager.Offset, pager.Limit)
+	totalRows, _ := h.Repository.Count(ctx, profileId)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	pagerResult := types.PagerResult{}
+	pagerResult := types.PagerResult{
+		Pager: pager,
+		Total: totalRows,
+		Data:  schedules,
+	}
 
-	return c.JSON(http.StatusOK, pagerResult.GetPagerResult(&pager, number, schedules))
+	return c.JSON(http.StatusOK, pagerResult.Pages())
 }
 
 func (h *ScheduleController) Create(c echo.Context) (err error) {
-	var schedule models.Schedule
-	c.Bind(&schedule)
+	schedule := models.Schedule{}
+	ctx := c.Request().Context()
+	_ = c.Bind(&schedule)
 
-	if _, err := h.DayRepository.GetById(c.Request().Context(), schedule.DayId); err != nil {
+	if _, err := h.DayRepository.GetById(ctx, schedule.DayId); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
 
@@ -62,7 +79,7 @@ func (h *ScheduleController) Create(c echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if err = h.Repository.Create(c.Request().Context(), &schedule); err != nil {
+	if err = h.Repository.Create(ctx, &schedule); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -71,12 +88,13 @@ func (h *ScheduleController) Create(c echo.Context) (err error) {
 
 func (h *ScheduleController) DeleteOne(c echo.Context) (err error) {
 	userId := c.Request().Header.Get(enums.UserId)
+	ctx := c.Request().Context()
 
-	if _, err = h.Repository.GetOne(c.Request().Context(), userId); err != nil {
+	if _, err = h.Repository.GetOne(ctx, userId); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.DeleteOne(c.Request().Context(), userId); err != nil {
+	if err = h.Repository.DeleteOne(ctx, userId); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

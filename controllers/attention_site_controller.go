@@ -1,11 +1,12 @@
 package controllers
 
 import (
+	"net/http"
+
 	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/types"
-	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
@@ -16,8 +17,10 @@ type AttentionSiteController struct {
 }
 
 func (h *AttentionSiteController) GetAll(c echo.Context) (err error) {
+	ctx := c.Request().Context()
+
 	var pager types.Pager
-	c.Bind(&pager)
+	_ = c.Bind(&pager)
 
 	if err = pager.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -25,48 +28,56 @@ func (h *AttentionSiteController) GetAll(c echo.Context) (err error) {
 
 	userId := c.Request().Header.Get(enums.UserId)
 
-	sites, err := h.Repository.GetAll(c.Request().Context(), userId, pager.Offset, pager.Limit)
-	number, _ := h.Repository.Count(c.Request().Context(), userId)
+	sites, err := h.Repository.GetAll(ctx, userId, pager.Offset, pager.Limit)
+	totalRows, _ := h.Repository.Count(ctx, userId)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	pagerResult := types.PagerResult{}
+	pagerResult := types.PagerResult{
+		Pager: pager,
+		Total: totalRows,
+		Data:  sites,
+	}
 
-	return c.JSON(http.StatusOK, pagerResult.GetPagerResult(&pager, number, sites))
+	return c.JSON(http.StatusOK, pagerResult.Pages())
 }
 
 func (h *AttentionSiteController) GetById(c echo.Context) (err error) {
+	ctx := c.Request().Context()
+	id := c.Param("id")
+
 	var pager types.Pager
-	c.Bind(&pager)
+	_ = c.Bind(&pager)
 
 	if err = pager.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	sites, err := h.Repository.GetAll(
-		c.Request().Context(),
-		c.Param("id"),
-		pager.Offset,
-		pager.Limit,
-	)
-	number, _ := h.Repository.Count(c.Request().Context(), c.Param("id"))
+	sites, err := h.Repository.GetAll(ctx, id, pager.Offset, pager.Limit)
+	totalRows, _ := h.Repository.Count(ctx, id)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	pagerResult := types.PagerResult{}
+	pagerResult := types.PagerResult{
+		Pager: pager,
+		Total: totalRows,
+		Data:  sites,
+	}
 
-	return c.JSON(http.StatusOK, pagerResult.GetPagerResult(&pager, number, sites))
+	return c.JSON(http.StatusOK, pagerResult.Pages())
 }
 
 func (h *AttentionSiteController) Create(c echo.Context) (err error) {
-	var site models.AttentionSite
-	c.Bind(&site)
+	ctx := c.Request().Context()
 
-	if _, err := h.AttentionSiteCategoryRepository.GetById(c.Request().Context(), site.AttentionSiteCategoryId); err != nil {
+	var site models.AttentionSite
+	_ = c.Bind(&site)
+
+	if _, err := h.AttentionSiteCategoryRepository.GetById(ctx, site.AttentionSiteCategoryId); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
@@ -76,7 +87,7 @@ func (h *AttentionSiteController) Create(c echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if err = h.Repository.Create(c.Request().Context(), &site); err != nil {
+	if err = h.Repository.Create(ctx, &site); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -85,12 +96,13 @@ func (h *AttentionSiteController) Create(c echo.Context) (err error) {
 
 func (h *AttentionSiteController) DeleteOne(c echo.Context) (err error) {
 	id := c.Param("id")
+	ctx := c.Request().Context()
 
-	if _, err = h.Repository.GetOne(c.Request().Context(), id); err != nil {
+	if _, err = h.Repository.GetOne(ctx, id); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.DeleteOne(c.Request().Context(), id); err != nil {
+	if err = h.Repository.DeleteOne(ctx, id); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

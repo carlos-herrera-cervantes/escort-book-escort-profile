@@ -2,13 +2,14 @@ package repositories
 
 import (
 	"context"
-	"escort-book-escort-profile/db"
-	"escort-book-escort-profile/models"
 	"time"
+
+	"escort-book-escort-profile/models"
+	"escort-book-escort-profile/singleton"
 )
 
 type PriceRepository struct {
-	Data *db.Data
+	Data *singleton.PostgresClient
 }
 
 func (r *PriceRepository) GetAll(ctx context.Context, profileId string, offset, limit int) ([]models.Price, error) {
@@ -17,18 +18,17 @@ func (r *PriceRepository) GetAll(ctx context.Context, profileId string, offset, 
 			  INNER JOIN time_category b
 			  ON b.id = a.time_category_id
 			  WHERE escort_id = $3 OFFSET($1) LIMIT($2);`
-	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit, profileId)
+	rows, err := r.Data.EscortProfileDB.QueryContext(ctx, query, offset, limit, profileId)
+	prices := []models.Price{}
 
 	if err != nil {
-		return nil, err
+		return prices, err
 	}
 
 	defer rows.Close()
 
-	var prices []models.Price
-
 	for rows.Next() {
-		var price models.Price
+		price := models.Price{}
 
 		rows.Scan(
 			&price.Id,
@@ -50,9 +50,9 @@ func (r *PriceRepository) GetAll(ctx context.Context, profileId string, offset, 
 
 func (r *PriceRepository) GetOne(ctx context.Context, id string) (models.Price, error) {
 	query := "SELECT * FROM price WHERE id = $1;"
-	row := r.Data.DB.QueryRowContext(ctx, query, id)
+	row := r.Data.EscortProfileDB.QueryRowContext(ctx, query, id)
 
-	var price models.Price
+	price := models.Price{}
 	err := row.Scan(
 		&price.Id,
 		&price.Cost,
@@ -72,7 +72,7 @@ func (r *PriceRepository) Create(ctx context.Context, price *models.Price) error
 	query := "INSERT INTO price VALUES ($1, $2, $3, $4, $5, $6, $7);"
 	price.SetDefaultValues()
 
-	_, err := r.Data.DB.ExecContext(
+	_, err := r.Data.EscortProfileDB.ExecContext(
 		ctx,
 		query,
 		price.Id,
@@ -92,9 +92,9 @@ func (r *PriceRepository) Create(ctx context.Context, price *models.Price) error
 }
 
 func (r *PriceRepository) UpdateOne(ctx context.Context, id string, price *models.Price) error {
-	query := "UPDATE price set cost = $1, time_category_id = $2 WHERE id = $3;"
+	query := "UPDATE price set cost = $1, time_category_id = $2, updated_at = $3 WHERE id = $4;"
 
-	_, err := r.Data.DB.ExecContext(
+	_, err := r.Data.EscortProfileDB.ExecContext(
 		ctx,
 		query,
 		price.Cost,
@@ -111,7 +111,7 @@ func (r *PriceRepository) UpdateOne(ctx context.Context, id string, price *model
 
 func (r *PriceRepository) DeleteOne(ctx context.Context, id string) error {
 	query := "DELETE FROM price WHERE id = $1;"
-	_, err := r.Data.DB.ExecContext(ctx, query, id)
+	_, err := r.Data.EscortProfileDB.ExecContext(ctx, query, id)
 
 	if err != nil {
 		return err
@@ -122,7 +122,7 @@ func (r *PriceRepository) DeleteOne(ctx context.Context, id string) error {
 
 func (r *PriceRepository) Count(ctx context.Context, profileId string) (int, error) {
 	query := "SELECT COUNT(*) FROM price WHERE escort_id = $1;"
-	row := r.Data.DB.QueryRowContext(ctx, query, profileId)
+	row := r.Data.EscortProfileDB.QueryRowContext(ctx, query, profileId)
 
 	var number int
 

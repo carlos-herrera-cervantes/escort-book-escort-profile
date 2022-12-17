@@ -2,28 +2,30 @@ package repositories
 
 import (
 	"context"
-	"escort-book-escort-profile/db"
-	"escort-book-escort-profile/models"
 	"time"
+
+	"escort-book-escort-profile/models"
+	"escort-book-escort-profile/singleton"
 )
 
 type ProfileRepository struct {
-	Data *db.Data
+	Data *singleton.PostgresClient
 }
 
 func (r *ProfileRepository) GetAll(ctx context.Context, offset, limit int) ([]models.Profile, error) {
 	query := "SELECT * FROM profile OFFSET($1) LIMIT($2);"
-	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit)
-	defer rows.Close()
+	rows, err := r.Data.EscortProfileDB.QueryContext(ctx, query, offset, limit)
+
+	escorts := []models.Profile{}
 
 	if err != nil {
-		return nil, err
+		return escorts, err
 	}
 
-	var escorts []models.Profile
+	defer rows.Close()
 
 	for rows.Next() {
-		var escort models.Profile
+		escort := models.Profile{}
 
 		rows.Scan(
 			&escort.Id,
@@ -47,9 +49,9 @@ func (r *ProfileRepository) GetAll(ctx context.Context, offset, limit int) ([]mo
 
 func (r *ProfileRepository) GetOne(ctx context.Context, id string) (models.Profile, error) {
 	query := "SELECT * FROM profile WHERE escort_id = $1;"
-	row := r.Data.DB.QueryRowContext(ctx, query, id)
+	row := r.Data.EscortProfileDB.QueryRowContext(ctx, query, id)
 
-	var profile models.Profile
+	profile := models.Profile{}
 	err := row.Scan(
 		&profile.Id,
 		&profile.EscortId,
@@ -64,7 +66,7 @@ func (r *ProfileRepository) GetOne(ctx context.Context, id string) (models.Profi
 		&profile.UpdatedAt)
 
 	if err != nil {
-		return models.Profile{}, err
+		return profile, err
 	}
 
 	return profile, nil
@@ -74,7 +76,7 @@ func (r *ProfileRepository) Create(ctx context.Context, profile *models.Profile)
 	query := "INSERT INTO profile VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);"
 	profile.SetDefaultValues()
 
-	_, err := r.Data.DB.ExecContext(
+	_, err := r.Data.EscortProfileDB.ExecContext(
 		ctx,
 		query,
 		profile.Id,
@@ -101,7 +103,7 @@ func (r *ProfileRepository) UpdateOne(ctx context.Context, id string, profile *m
 			  first_name=$1, last_name=$2, gender=$3, birthdate=$4, updated_at=$5, nationality_id=$6
 			  WHERE escort_id=$7;`
 
-	_, err := r.Data.DB.ExecContext(
+	_, err := r.Data.EscortProfileDB.ExecContext(
 		ctx,
 		query,
 		profile.FirstName,
@@ -121,7 +123,7 @@ func (r *ProfileRepository) UpdateOne(ctx context.Context, id string, profile *m
 
 func (r *ProfileRepository) DeleteOne(ctx context.Context, id string) error {
 	query := "DELETE FROM profile WHERE escort_id=$1;"
-	_, err := r.Data.DB.ExecContext(ctx, query, id)
+	_, err := r.Data.EscortProfileDB.ExecContext(ctx, query, id)
 
 	if err != nil {
 		return err
@@ -132,7 +134,7 @@ func (r *ProfileRepository) DeleteOne(ctx context.Context, id string) error {
 
 func (r *ProfileRepository) Count(ctx context.Context) (int, error) {
 	query := "SELECT COUNT(*) FROM profile;"
-	row := r.Data.DB.QueryRowContext(ctx, query)
+	row := r.Data.EscortProfileDB.QueryRowContext(ctx, query)
 
 	var number int
 

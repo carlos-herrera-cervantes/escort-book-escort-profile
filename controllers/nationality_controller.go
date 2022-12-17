@@ -1,34 +1,39 @@
 package controllers
 
 import (
+	"net/http"
+
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/types"
-	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
 
 type NationalityController struct {
-	Repository *repositories.NationalityRepository
+	Repository repositories.INationalityRepository
 }
 
 func (h *NationalityController) GetAll(c echo.Context) (err error) {
-	var pager types.Pager
-
-	c.Bind(&pager)
+	pager := types.Pager{}
+	_ = c.Bind(&pager)
 
 	if err = pager.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	nationalitites, err := h.Repository.GetAll(c.Request().Context(), pager.Offset, pager.Limit)
-	number, _ := h.Repository.Count(c.Request().Context())
+	ctx := c.Request().Context()
+	nationalitites, err := h.Repository.GetAll(ctx, pager.Offset, pager.Limit)
+	totalRows, _ := h.Repository.Count(ctx)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	pagerResult := types.PagerResult{}
+	pagerResult := types.PagerResult{
+		Pager: pager,
+		Total: totalRows,
+		Data:  nationalitites,
+	}
 
-	return c.JSON(http.StatusOK, pagerResult.GetPagerResult(&pager, number, nationalitites))
+	return c.JSON(http.StatusOK, pagerResult.Pages())
 }

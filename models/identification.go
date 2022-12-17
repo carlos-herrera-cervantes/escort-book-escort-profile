@@ -10,8 +10,8 @@ import (
 type Identification struct {
 	Id                   string    `json:"id"`
 	Path                 string    `json:"path"`
-	ProfileId            string    `json:"profileId"`
-	IdentificationPartId string    `json:"identificationPartId"`
+	ProfileId            string    `json:"profileId" validate:"required"`
+	IdentificationPartId string    `json:"identificationPartId" validate:"required"`
 	CreatedAt            time.Time `json:"createdAt"`
 	UpdatedAt            time.Time `json:"updatedAt"`
 }

@@ -1,14 +1,15 @@
 package controllers
 
 import (
+	"fmt"
+	"net/http"
+
+	"escort-book-escort-profile/config"
 	"escort-book-escort-profile/constants"
 	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/services"
-	"fmt"
-	"net/http"
-	"os"
 
 	"github.com/labstack/echo/v4"
 )
@@ -30,8 +31,9 @@ func (h *IdentificationController) GetByExternal(c echo.Context) (err error) {
 	for index := range identifications {
 		identifications[index].Path = fmt.Sprintf(
 			"%s/%s/%s",
-			os.Getenv("S3_ENPOINT"),
-			os.Getenv("S3"), identifications[index].Path,
+			config.InitS3().Endpoint,
+			config.InitS3().Buckets.EscortProfile,
+			identifications[index].Path,
 		)
 	}
 
@@ -51,8 +53,9 @@ func (h *IdentificationController) GetAll(c echo.Context) (err error) {
 	for index := range identifications {
 		identifications[index].Path = fmt.Sprintf(
 			"%s/%s/%s",
-			os.Getenv("S3_ENPOINT"),
-			os.Getenv("S3"), identifications[index].Path,
+			config.InitS3().Endpoint,
+			config.InitS3().Buckets.EscortProfile,
+			identifications[index].Path,
 		)
 	}
 
@@ -67,19 +70,19 @@ func (h *IdentificationController) Create(c echo.Context) (err error) {
 	}
 
 	partId := c.FormValue("identificationPartId")
+	ctx := c.Request().Context()
 
-	if _, err := h.IdentificationCategoryRepository.GetById(c.Request().Context(), partId); err != nil {
+	if _, err := h.IdentificationCategoryRepository.GetById(ctx, partId); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
 
 	src, _ := image.Open()
-
 	defer src.Close()
+
 	userId := c.Request().Header.Get(enums.UserId)
 
 	url, err := h.S3Service.Upload(
-		c.Request().Context(),
-		os.Getenv("S3"),
+		config.InitS3().Buckets.EscortProfile,
 		image.Filename,
 		userId,
 		src,
@@ -99,7 +102,7 @@ func (h *IdentificationController) Create(c echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if err = h.Repository.Create(c.Request().Context(), &identification); err != nil {
+	if err = h.Repository.Create(ctx, &identification); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -110,13 +113,14 @@ func (h *IdentificationController) Create(c echo.Context) (err error) {
 
 func (h *IdentificationController) UpdateOne(c echo.Context) (err error) {
 	id := c.Param("id")
+	ctx := c.Request().Context()
 
-	if _, err := h.IdentificationCategoryRepository.GetById(c.Request().Context(), id); err != nil {
+	if _, err := h.IdentificationCategoryRepository.GetById(ctx, id); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
 
 	userId := c.Request().Header.Get(enums.UserId)
-	identification, err := h.Repository.GetOne(c.Request().Context(), userId)
+	identification, err := h.Repository.GetOne(ctx, userId)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -129,12 +133,10 @@ func (h *IdentificationController) UpdateOne(c echo.Context) (err error) {
 	}
 
 	src, _ := image.Open()
-
 	defer src.Close()
 
 	url, err := h.S3Service.Upload(
-		c.Request().Context(),
-		os.Getenv("S3"),
+		config.InitS3().Buckets.EscortProfile,
 		image.Filename,
 		userId,
 		src,
@@ -146,7 +148,7 @@ func (h *IdentificationController) UpdateOne(c echo.Context) (err error) {
 
 	identification.Path = fmt.Sprintf("%s/%s", userId, image.Filename)
 
-	if err = h.Repository.UpdateOne(c.Request().Context(), userId, &identification); err != nil {
+	if err = h.Repository.UpdateOne(ctx, userId, &identification); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
