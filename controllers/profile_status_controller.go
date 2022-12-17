@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sync"
 
 	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
@@ -33,11 +34,12 @@ func (h *ProfileStatusController) GetByExternal(c echo.Context) (err error) {
 }
 
 func (h *ProfileStatusController) UpdateByExternal(c echo.Context) (err error) {
-	var partialProfileStatus models.PartialProfileStatus
+	partialProfileStatus := models.PartialProfileStatus{}
+	ctx := c.Request().Context()
 	_ = c.Bind(&partialProfileStatus)
 
 	category, err := h.ProfileStatusCategoryRepository.GetById(
-		c.Request().Context(),
+		ctx,
 		partialProfileStatus.ProfileStatusCategoryId,
 	)
 
@@ -46,7 +48,7 @@ func (h *ProfileStatusController) UpdateByExternal(c echo.Context) (err error) {
 	}
 
 	userId := c.Param("id")
-	profileStatus, err := h.Repository.GetOne(c.Request().Context(), userId)
+	profileStatus, err := h.Repository.GetOne(ctx, userId)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -54,33 +56,34 @@ func (h *ProfileStatusController) UpdateByExternal(c echo.Context) (err error) {
 
 	profileStatus.ProfileStatusCategoryId = partialProfileStatus.ProfileStatusCategoryId
 
-	if err = h.Repository.UpdateOne(c.Request().Context(), userId, &profileStatus); err != nil {
+	if err = h.Repository.UpdateOne(ctx, userId, &profileStatus); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	if category.Name == enums.Locked || category.Name == enums.Active {
-		go h.emitDisableMessage(c.Request().Context(), userId, category.Name)
-	}
+	var wg sync.WaitGroup
+	wg.Add(2)
 
-	if category.Name == enums.Deleted {
-		args := map[string]string{
-			"userId": userId,
-			"userType": c.Request().Header.Get("user-type"),
-			"userEmail": c.Request().Header.Get("user-email"),
-		}
-		go h.emitDeletionMessage(c.Request().Context(), args)
-		go h.emitDisableMessage(c.Request().Context(), userId, category.Name)
+	args := map[string]string{
+		"userId":       userId,
+		"userType":     c.Request().Header.Get("user-type"),
+		"userEmail":    c.Request().Header.Get("user-email"),
+		"categoryName": category.Name,
 	}
+	go h.emitDeletionMessage(ctx, &wg, args)
+	go h.emitDisableMessage(ctx, &wg, args)
+
+	wg.Wait()
 
 	return c.JSON(http.StatusOK, profileStatus)
 }
 
 func (h *ProfileStatusController) UpdateOne(c echo.Context) (err error) {
-	var partialProfileStatus models.PartialProfileStatus
+	partialProfileStatus := models.PartialProfileStatus{}
+	ctx := c.Request().Context()
 	_ = c.Bind(&partialProfileStatus)
 
 	category, err := h.ProfileStatusCategoryRepository.GetById(
-		c.Request().Context(),
+		ctx,
 		partialProfileStatus.ProfileStatusCategoryId,
 	)
 
@@ -96,7 +99,7 @@ func (h *ProfileStatusController) UpdateOne(c echo.Context) (err error) {
 	}
 
 	userId := c.Request().Header.Get(enums.UserId)
-	profileStatus, err := h.Repository.GetOne(c.Request().Context(), userId)
+	profileStatus, err := h.Repository.GetOne(ctx, userId)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -104,48 +107,68 @@ func (h *ProfileStatusController) UpdateOne(c echo.Context) (err error) {
 
 	profileStatus.ProfileStatusCategoryId = partialProfileStatus.ProfileStatusCategoryId
 
-	if err = h.Repository.UpdateOne(c.Request().Context(), userId, &profileStatus); err != nil {
+	if err = h.Repository.UpdateOne(ctx, userId, &profileStatus); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	if category.Name == enums.Deactivated {
-		go h.emitDisableMessage(c.Request().Context(), userId, category.Name)
-	}
+	var wg sync.WaitGroup
+	wg.Add(2)
 
-	if category.Name == enums.Deleted {
-		args := map[string]string{
-			"userId": userId,
-			"userType": c.Request().Header.Get("user-type"),
-			"userEmail": c.Request().Header.Get("user-email"),
-		}
-		go h.emitDeletionMessage(c.Request().Context(), args)
-		go h.emitDisableMessage(c.Request().Context(), userId, category.Name)
+	args := map[string]string{
+		"userId":       userId,
+		"userType":     c.Request().Header.Get("user-type"),
+		"userEmail":    c.Request().Header.Get("user-email"),
+		"categoryName": category.Name,
 	}
+	go h.emitDisableMessage(ctx, &wg, args)
+	go h.emitDeletionMessage(ctx, &wg, args)
+
+	wg.Wait()
 
 	return c.JSON(http.StatusOK, profileStatus)
 }
 
-func (h *ProfileStatusController) emitDisableMessage(ctx context.Context, userId, categoryName string) {
-	newBlockUserEvent := types.BlockUserEvent{
-		UserId: userId,
-		Status: categoryName,
-	}
-	message, _ := json.Marshal(newBlockUserEvent)
+func (h *ProfileStatusController) emitDisableMessage(
+	ctx context.Context,
+	wg *sync.WaitGroup,
+	args map[string]string,
+) {
+	defer wg.Done()
 
-	if err := h.KafkaService.SendMessage(ctx, "block-user", message); err != nil {
+	if args["categoryName"] != enums.Deleted && args["categoryName"] != enums.Deactivated {
+		return
+	}
+
+	blockUserEvent := types.BlockUserEvent{
+		UserId: args["userId"],
+		Status: args["categoryName"],
+	}
+	message, _ := json.Marshal(blockUserEvent)
+
+	if err := h.KafkaService.SendMessage("block-user", message); err != nil {
 		log.Println("WE CAN'T PROPAGATE THE PROFILE STATUS: ", err.Error())
 	}
 }
 
-func (h *ProfileStatusController) emitDeletionMessage(ctx context.Context, args map[string]string) {
+func (h *ProfileStatusController) emitDeletionMessage(
+	ctx context.Context,
+	wg *sync.WaitGroup,
+	args map[string]string,
+) {
+	defer wg.Done()
+
+	if args["categoryName"] != enums.Deleted {
+		return
+	}
+
 	deleteUserEvent := types.DeleteUserEvent{
-		UserId: args["userId"],
-		UserType: args["userType"],
+		UserId:    args["userId"],
+		UserType:  args["userType"],
 		UserEmail: args["userEmail"],
 	}
 	message, _ := json.Marshal(deleteUserEvent)
 
-	if err := h.KafkaService.SendMessage(ctx, "user-delete-account", message); err != nil {
+	if err := h.KafkaService.SendMessage("user-delete-account", message); err != nil {
 		log.Println("WE CAN'T PROPAGATE DELETION OF CUSTOMER: ", err.Error())
 	}
 }

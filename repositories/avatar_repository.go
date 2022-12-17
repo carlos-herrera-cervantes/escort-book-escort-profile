@@ -2,18 +2,19 @@ package repositories
 
 import (
 	"context"
-	"escort-book-escort-profile/db"
-	"escort-book-escort-profile/models"
 	"time"
+
+	"escort-book-escort-profile/models"
+	"escort-book-escort-profile/singleton"
 )
 
 type AvatarRepository struct {
-	Data *db.Data
+	Data *singleton.PostgresClient
 }
 
 func (r *AvatarRepository) GetOne(ctx context.Context, id string) (models.Avatar, error) {
 	query := "SELECT * FROM avatar WHERE escort_id = $1;"
-	row := r.Data.DB.QueryRowContext(ctx, query, id)
+	row := r.Data.EscortProfileDB.QueryRowContext(ctx, query, id)
 
 	var avatar models.Avatar
 	err := row.Scan(
@@ -34,7 +35,7 @@ func (r *AvatarRepository) Create(ctx context.Context, avatar *models.Avatar) er
 	query := "INSERT INTO avatar VALUES ($1, $2, $3, $4, $5);"
 	avatar.SetDefaultValues()
 
-	_, err := r.Data.DB.ExecContext(
+	_, err := r.Data.EscortProfileDB.ExecContext(
 		ctx,
 		query,
 		avatar.Id,
@@ -52,7 +53,7 @@ func (r *AvatarRepository) Create(ctx context.Context, avatar *models.Avatar) er
 
 func (r *AvatarRepository) UpdateOne(ctx context.Context, id string, avatar *models.Avatar) error {
 	query := "UPDATE avatar SET path = $1, updated_at = $2 WHERE escort_id = $3;"
-	_, err := r.Data.DB.ExecContext(ctx, query, avatar.Path, time.Now().UTC(), id)
+	_, err := r.Data.EscortProfileDB.ExecContext(ctx, query, avatar.Path, time.Now().UTC(), id)
 
 	if err != nil {
 		return err
@@ -63,7 +64,7 @@ func (r *AvatarRepository) UpdateOne(ctx context.Context, id string, avatar *mod
 
 func (r *AvatarRepository) DeleteOne(ctx context.Context, id string) error {
 	query := "DELETE FROM avatar WHERE escort_id = $1;"
-	_, err := r.Data.DB.ExecContext(ctx, query, id)
+	_, err := r.Data.EscortProfileDB.ExecContext(ctx, query, id)
 
 	if err != nil {
 		return err

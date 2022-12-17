@@ -1,50 +1,27 @@
 package services
 
-import (
-	"escort-book-escort-profile/types"
-	"sync"
-)
+import "escort-book-escort-profile/types"
 
-type EmitterService struct{}
-
-var lock = &sync.Mutex{}
-var emitter *types.Emitter
-
-func getEmitter() *types.Emitter {
-	if emitter == nil {
-		lock.Lock()
-		defer lock.Unlock()
-
-		if emitter == nil {
-			emitter = &types.Emitter{Name: "globalEmitter", Listeners: nil}
-		}
-	}
-
-	return emitter
+type EmitterService struct {
+	Emitter *types.Emitter
 }
 
 func (e *EmitterService) AddListener(name string, channel chan interface{}) {
-	emitter := getEmitter()
-
-	if emitter.Listeners == nil {
-		emitter.Listeners = make(map[string]chan interface{})
+	if e.Emitter.Listeners == nil {
+		e.Emitter.Listeners = make(map[string]chan interface{})
 	}
 
-	emitter.Listeners[name] = channel
+	e.Emitter.Listeners[name] = channel
 }
 
-func (e *EmitterService) RemoveListener(name string, channel chan interface{}) {
-	emitter := getEmitter()
-
-	if listener := emitter.Listeners[name]; listener != nil {
-		delete(emitter.Listeners, name)
+func (e *EmitterService) RemoveListener(name string) {
+	if listener := e.Emitter.Listeners[name]; listener != nil {
+		delete(e.Emitter.Listeners, name)
 	}
 }
 
 func (e *EmitterService) Emit(name string, message interface{}) {
-	emitter := getEmitter()
-
-	if listener := emitter.Listeners[name]; listener != nil {
+	if listener := e.Emitter.Listeners[name]; listener != nil {
 		go func(listener chan interface{}) {
 			listener <- message
 		}(listener)

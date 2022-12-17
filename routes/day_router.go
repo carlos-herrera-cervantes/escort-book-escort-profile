@@ -2,16 +2,16 @@ package routes
 
 import (
 	"escort-book-escort-profile/controllers"
-	"escort-book-escort-profile/db"
 	"escort-book-escort-profile/repositories"
+	"escort-book-escort-profile/singleton"
 
 	"github.com/labstack/echo/v4"
 )
 
-func BoostrapDayRoutes(v *echo.Group) {
+func BootstrapDayRoutes(v *echo.Group) {
 	router := &controllers.DayController{
 		Repository: &repositories.DayRepository{
-			Data: db.New(),
+			Data: singleton.NewPostgresClient(),
 		},
 	}
 

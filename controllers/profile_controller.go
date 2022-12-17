@@ -1,12 +1,13 @@
 package controllers
 
 import (
+	"net/http"
+
 	"escort-book-escort-profile/enums"
 	"escort-book-escort-profile/models"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/services"
 	"escort-book-escort-profile/types"
-	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
@@ -18,27 +19,35 @@ type ProfileController struct {
 }
 
 func (h *ProfileController) GetAll(c echo.Context) (err error) {
-	var pager types.Pager
-	c.Bind(&pager)
+	pager := types.Pager{}
+	_ = c.Bind(&pager)
 
 	if err = pager.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	escorts, err := h.Repository.GetAll(c.Request().Context(), pager.Offset, pager.Limit)
+	ctx := c.Request().Context()
+	escorts, err := h.Repository.GetAll(ctx, pager.Offset, pager.Limit)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	number, _ := h.Repository.Count(c.Request().Context())
-	pagerResult := types.PagerResult{}
+	totalRows, _ := h.Repository.Count(ctx)
+	pagerResult := types.PagerResult{
+		Pager: pager,
+		Total: totalRows,
+		Data:  escorts,
+	}
 
-	return c.JSON(http.StatusOK, pagerResult.GetPagerResult(&pager, number, escorts))
+	return c.JSON(http.StatusOK, pagerResult.Pages())
 }
 
 func (h *ProfileController) GetOne(c echo.Context) error {
-	profile, err := h.Repository.GetOne(c.Request().Context(), c.Request().Header.Get(enums.UserId))
+	profile, err := h.Repository.GetOne(
+		c.Request().Context(),
+		c.Request().Header.Get(enums.UserId),
+	)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -58,10 +67,11 @@ func (h *ProfileController) GetById(c echo.Context) error {
 }
 
 func (h *ProfileController) Create(c echo.Context) (err error) {
-	var profile models.Profile
-	c.Bind(&profile)
+	profile := models.Profile{}
+	ctx := c.Request().Context()
+	_ = c.Bind(&profile)
 
-	if _, err := h.NationalityRepository.GetById(c.Request().Context(), profile.NationalityId); err != nil {
+	if _, err := h.NationalityRepository.GetById(ctx, profile.NationalityId); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
 
@@ -71,7 +81,7 @@ func (h *ProfileController) Create(c echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if err = h.Repository.Create(c.Request().Context(), &profile); err != nil {
+	if err = h.Repository.Create(ctx, &profile); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -81,15 +91,12 @@ func (h *ProfileController) Create(c echo.Context) (err error) {
 }
 
 func (h *ProfileController) UpdateOne(c echo.Context) (err error) {
-	var profilePartial models.PartialProfile
-	c.Bind(&profilePartial)
-
-	if _, err := h.NationalityRepository.GetById(c.Request().Context(), profilePartial.NationalityId); err != nil {
-		return echo.NewHTTPError(http.StatusNotFound)
-	}
+	profilePartial := models.PartialProfile{}
+	_ = c.Bind(&profilePartial)
 
 	userId := c.Request().Header.Get(enums.UserId)
-	profile, err := h.Repository.GetOne(c.Request().Context(), userId)
+	ctx := c.Request().Context()
+	profile, err := h.Repository.GetOne(ctx, userId)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -97,7 +104,7 @@ func (h *ProfileController) UpdateOne(c echo.Context) (err error) {
 
 	profilePartial.MapPartial(&profile)
 
-	if err = h.Repository.UpdateOne(c.Request().Context(), userId, &profile); err != nil {
+	if err = h.Repository.UpdateOne(ctx, userId, &profile); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -106,12 +113,13 @@ func (h *ProfileController) UpdateOne(c echo.Context) (err error) {
 
 func (h *ProfileController) DeleteOne(c echo.Context) (err error) {
 	userId := c.Request().Header.Get(enums.UserId)
+	ctx := c.Request().Context()
 
-	if _, err = h.Repository.GetOne(c.Request().Context(), userId); err != nil {
+	if _, err = h.Repository.GetOne(ctx, userId); err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	if err = h.Repository.DeleteOne(c.Request().Context(), userId); err != nil {
+	if err = h.Repository.DeleteOne(ctx, userId); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

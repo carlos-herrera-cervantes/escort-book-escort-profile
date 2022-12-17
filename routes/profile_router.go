@@ -2,21 +2,23 @@ package routes
 
 import (
 	"escort-book-escort-profile/controllers"
-	"escort-book-escort-profile/db"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/services"
+	"escort-book-escort-profile/singleton"
 
 	"github.com/labstack/echo/v4"
 )
 
-func BoostrapProfileRoutes(v *echo.Group) {
+func BootstrapProfileRoutes(v *echo.Group) {
 	router := &controllers.ProfileController{
 		Repository: &repositories.ProfileRepository{
-			Data: db.New(),
+			Data: singleton.NewPostgresClient(),
 		},
-		Emitter: &services.EmitterService{},
+		Emitter: &services.EmitterService{
+			Emitter: singleton.NewEmitter(),
+		},
 		NationalityRepository: &repositories.NationalityRepository{
-			Data: db.New(),
+			Data: singleton.NewPostgresClient(),
 		},
 	}
 

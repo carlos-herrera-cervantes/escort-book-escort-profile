@@ -2,19 +2,21 @@ package routes
 
 import (
 	"escort-book-escort-profile/controllers"
-	"escort-book-escort-profile/db"
 	"escort-book-escort-profile/repositories"
 	"escort-book-escort-profile/services"
+	"escort-book-escort-profile/singleton"
 
 	"github.com/labstack/echo/v4"
 )
 
-func BoostrapPhotoRoutes(v *echo.Group) {
+func BootstrapPhotoRoutes(v *echo.Group) {
 	router := &controllers.PhotoController{
 		Repository: &repositories.PhotoRepository{
-			Data: db.New(),
+			Data: singleton.NewPostgresClient(),
 		},
-		S3Service: &services.S3Service{},
+		S3Service: &services.S3Service{
+			S3Client: singleton.NewS3Client(),
+		},
 	}
 
 	v.GET("/escort/profile/photos", router.GetAll)

@@ -2,19 +2,19 @@ package routes
 
 import (
 	"escort-book-escort-profile/controllers"
-	"escort-book-escort-profile/db"
 	"escort-book-escort-profile/repositories"
+	"escort-book-escort-profile/singleton"
 
 	"github.com/labstack/echo/v4"
 )
 
-func BoostrapAttentionSiteRoutes(v *echo.Group) {
+func BootstrapAttentionSiteRoutes(v *echo.Group) {
 	router := &controllers.AttentionSiteController{
 		Repository: &repositories.AttentionSiteRepository{
-			Data: db.New(),
+			Data: singleton.NewPostgresClient(),
 		},
 		AttentionSiteCategoryRepository: &repositories.AttentionSiteCategoryRepository{
-			Data: db.New(),
+			Data: singleton.NewPostgresClient(),
 		},
 	}
 

@@ -1,17 +1,17 @@
 package services
 
 import (
-	"context"
-	"escort-book-escort-profile/db"
+	"escort-book-escort-profile/singleton"
+
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 type KafkaService struct {
-	Producer *db.Producer
+	Producer singleton.IKafka
 }
 
-func (k *KafkaService) SendMessage(ctx context.Context, topic string, message []byte) error {
-	err := k.Producer.KafkaProducer.Produce(&kafka.Message{
+func (k *KafkaService) SendMessage(topic string, message []byte) error {
+	err := k.Producer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{
 			Topic:     &topic,
 			Partition: kafka.PartitionAny,

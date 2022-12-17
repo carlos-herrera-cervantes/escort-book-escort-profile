@@ -2,29 +2,29 @@ package repositories
 
 import (
 	"context"
-	"escort-book-escort-profile/db"
-	"escort-book-escort-profile/models"
 	"time"
+
+	"escort-book-escort-profile/models"
+	"escort-book-escort-profile/singleton"
 )
 
 type PhotoRepository struct {
-	Data *db.Data
+	Data *singleton.PostgresClient
 }
 
 func (r *PhotoRepository) GetAll(ctx context.Context, profileId string, offset, limit int) ([]models.Photo, error) {
 	query := "SELECT * FROM photo WHERE escort_id = $3 OFFSET($1) LIMIT($2);"
-	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit, profileId)
+	rows, err := r.Data.EscortProfileDB.QueryContext(ctx, query, offset, limit, profileId)
+	photos := []models.Photo{}
 
 	if err != nil {
-		return nil, err
+		return photos, err
 	}
 
 	defer rows.Close()
 
-	var photos []models.Photo
-
 	for rows.Next() {
-		var photo models.Photo
+		photo := models.Photo{}
 
 		rows.Scan(
 			&photo.Id,
@@ -41,9 +41,9 @@ func (r *PhotoRepository) GetAll(ctx context.Context, profileId string, offset, 
 
 func (r *PhotoRepository) GetOne(ctx context.Context, id string) (models.Photo, error) {
 	query := "SELECT * FROM photo WHERE id = $1;"
-	row := r.Data.DB.QueryRowContext(ctx, query, id)
+	row := r.Data.EscortProfileDB.QueryRowContext(ctx, query, id)
 
-	var photo models.Photo
+	photo := models.Photo{}
 	err := row.Scan(
 		&photo.Id,
 		&photo.Path,
@@ -62,7 +62,7 @@ func (r *PhotoRepository) Create(ctx context.Context, photo *models.Photo) error
 	query := "INSERT INTO photo VALUES ($1, $2, $3, $4, $5);"
 	photo.SetDefaultValues()
 
-	_, err := r.Data.DB.ExecContext(
+	_, err := r.Data.EscortProfileDB.ExecContext(
 		ctx,
 		query,
 		photo.Id,
@@ -80,7 +80,7 @@ func (r *PhotoRepository) Create(ctx context.Context, photo *models.Photo) error
 
 func (r *PhotoRepository) DeleteOne(ctx context.Context, id string) error {
 	query := "DELETE FROM photo WHERE id = $1;"
-	_, err := r.Data.DB.ExecContext(ctx, query, id)
+	_, err := r.Data.EscortProfileDB.ExecContext(ctx, query, id)
 
 	if err != nil {
 		return err
@@ -91,7 +91,7 @@ func (r *PhotoRepository) DeleteOne(ctx context.Context, id string) error {
 
 func (r *PhotoRepository) Count(ctx context.Context, profileId string) (int, error) {
 	query := "SELECT COUNT(*) FROM photo WHERE escort_id = $1;"
-	row := r.Data.DB.QueryRowContext(ctx, query, profileId)
+	row := r.Data.EscortProfileDB.QueryRowContext(ctx, query, profileId)
 
 	var number int
 

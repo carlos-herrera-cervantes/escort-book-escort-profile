@@ -2,17 +2,18 @@ package repositories
 
 import (
 	"context"
-	"escort-book-escort-profile/db"
+
 	"escort-book-escort-profile/models"
+	"escort-book-escort-profile/singleton"
 )
 
 type AttentionSiteCategoryRepository struct {
-	Data *db.Data
+	Data *singleton.PostgresClient
 }
 
 func (r *AttentionSiteCategoryRepository) GetAll(ctx context.Context, offset, limit int) ([]models.AttentionSiteCategory, error) {
 	query := "SELECT * FROM attention_site_category OFFSET($1) LIMIT($2);"
-	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit)
+	rows, err := r.Data.EscortProfileDB.QueryContext(ctx, query, offset, limit)
 
 	if err != nil {
 		return nil, err
@@ -40,7 +41,7 @@ func (r *AttentionSiteCategoryRepository) GetAll(ctx context.Context, offset, li
 
 func (r *AttentionSiteCategoryRepository) GetById(ctx context.Context, id string) (models.AttentionSiteCategory, error) {
 	query := "SELECT id, name FROM attention_site_category WHERE id = $1;"
-	row := r.Data.DB.QueryRowContext(ctx, query, id)
+	row := r.Data.EscortProfileDB.QueryRowContext(ctx, query, id)
 
 	var category models.AttentionSiteCategory
 	err := row.Scan(&category.Id, &category.Name)
@@ -54,7 +55,7 @@ func (r *AttentionSiteCategoryRepository) GetById(ctx context.Context, id string
 
 func (r *AttentionSiteCategoryRepository) Count(ctx context.Context) (int, error) {
 	query := "SELECT COUNT(*) FROM attention_site_category;"
-	rows := r.Data.DB.QueryRowContext(ctx, query)
+	rows := r.Data.EscortProfileDB.QueryRowContext(ctx, query)
 
 	var number int
 

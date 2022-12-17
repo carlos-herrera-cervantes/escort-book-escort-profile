@@ -2,13 +2,14 @@ package repositories
 
 import (
 	"context"
-	"escort-book-escort-profile/db"
-	"escort-book-escort-profile/models"
 	"time"
+
+	"escort-book-escort-profile/models"
+	"escort-book-escort-profile/singleton"
 )
 
 type AttentionSiteRepository struct {
-	Data *db.Data
+	Data *singleton.PostgresClient
 }
 
 func (r *AttentionSiteRepository) GetAll(
@@ -22,7 +23,7 @@ func (r *AttentionSiteRepository) GetAll(
 			  join attention_site_category b
 			  on a.attention_site_category_id = b.id
 			  WHERE escort_id = $3 OFFSET($1) LIMIT($2);`
-	rows, err := r.Data.DB.QueryContext(ctx, query, offset, limit, profileId)
+	rows, err := r.Data.EscortProfileDB.QueryContext(ctx, query, offset, limit, profileId)
 
 	if err != nil {
 		return nil, err
@@ -56,7 +57,7 @@ func (r *AttentionSiteRepository) GetOne(ctx context.Context, id string) (models
 			  join attention_site_category b
 			  on a.attention_site_category_id = b.id
 			  WHERE escort_id = $1`
-	row := r.Data.DB.QueryRowContext(ctx, query, id)
+	row := r.Data.EscortProfileDB.QueryRowContext(ctx, query, id)
 
 	var site models.AttentionSiteDetailed
 	err := row.Scan(
@@ -77,7 +78,7 @@ func (r *AttentionSiteRepository) Create(ctx context.Context, site *models.Atten
 	query := "INSERT INTO attention_site VALUES ($1, $2, $3, $4, $5);"
 	site.SetDefaultValues()
 
-	_, err := r.Data.DB.ExecContext(
+	_, err := r.Data.EscortProfileDB.ExecContext(
 		ctx,
 		query,
 		site.Id,
@@ -95,7 +96,7 @@ func (r *AttentionSiteRepository) Create(ctx context.Context, site *models.Atten
 
 func (r *AttentionSiteRepository) DeleteOne(ctx context.Context, id string) error {
 	query := "DELETE FROM attention_site WHERE id = $1;"
-	_, err := r.Data.DB.ExecContext(ctx, query, id)
+	_, err := r.Data.EscortProfileDB.ExecContext(ctx, query, id)
 
 	if err != nil {
 		return err
@@ -106,7 +107,7 @@ func (r *AttentionSiteRepository) DeleteOne(ctx context.Context, id string) erro
 
 func (r *AttentionSiteRepository) Count(ctx context.Context, profileId string) (int, error) {
 	query := "SELECT COUNT(id) FROM attention_site WHERE escort_id = $1;"
-	row := r.Data.DB.QueryRowContext(ctx, query, profileId)
+	row := r.Data.EscortProfileDB.QueryRowContext(ctx, query, profileId)
 
 	var number int
 
